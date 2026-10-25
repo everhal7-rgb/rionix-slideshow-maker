@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {duration,validate,clipAt} from '../src/timeline.js';
+const clips=[{id:'a',seconds:5},{id:'b',seconds:7},{id:'c',seconds:8}];
+test('cut boundaries and end clamp',()=>{assert.equal(duration(clips),20);assert.equal(clipAt(clips,4.999).id,'a');assert.equal(clipAt(clips,5).id,'b');assert.equal(clipAt(clips,12).id,'c');assert.equal(clipAt(clips,20).id,'c');});
+test('reject invalid durations/count; accept 15 and 30',()=>{for(const seconds of [0,-1,1.5,NaN,Infinity,11])assert.throws(()=>validate([seconds,seconds,seconds].map(seconds=>({seconds}))));assert.throws(()=>validate(clips.slice(1)));assert.equal(validate(clips),20);assert.equal(validate([5,5,5].map(seconds=>({seconds}))),15);assert.equal(validate([10,10,10].map(seconds=>({seconds}))),30);});

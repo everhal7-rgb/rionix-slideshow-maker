@@ -1,0 +1,75 @@
+{
+  "programs": [],
+  "streams": [
+    {
+      "codec_name": "h264",
+      "codec_type": "video",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "30/1",
+      "start_time": "0.000000",
+      "duration": "15.000000"
+    },
+    {
+      "codec_name": "aac",
+      "codec_type": "audio",
+      "r_frame_rate": "0/0",
+      "start_time": "0.000000",
+      "duration": "15.000000"
+    }
+  ],
+  "format": {
+    "duration": "15.000000"
+  },
+  "cut_samples": [
+    {
+      "seconds": 0,
+      "rgb": [
+        217,
+        63,
+        104
+      ]
+    },
+    {
+      "seconds": 4.9,
+      "rgb": [
+        217,
+        63,
+        104
+      ]
+    },
+    {
+      "seconds": 5,
+      "rgb": [
+        58,
+        114,
+        202
+      ]
+    },
+    {
+      "seconds": 9.9,
+      "rgb": [
+        58,
+        114,
+        202
+      ]
+    },
+    {
+      "seconds": 10,
+      "rgb": [
+        64,
+        166,
+        135
+      ]
+    },
+    {
+      "seconds": 14.9,
+      "rgb": [
+        64,
+        166,
+        135
+      ]
+    }
+  ],
+  "scope": "Native FFmpeg fallback only; NOT browser export"
+}
