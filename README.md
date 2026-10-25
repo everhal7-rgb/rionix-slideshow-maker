@@ -1,7 +1,11 @@
 # RIONIX 紙芝居動画メーカー v0.1
 
 画像3枚＋音声1本から、15〜30秒・16:9のMP4を端末内で録画する実験版。
-**実装済み・Android実機未検証・GitHub Pages未公開。完成条件はまだ未達成です。**
+**GitHub Pages公開済み・Android実機未検証。端末でのMP4生成・保存の完了確認はまだです。**
+
+公開URL: https://everhal7-rgb.github.io/rionix-slideshow-maker/
+
+ソース: https://github.com/everhal7-rgb/rionix-slideshow-maker
 
 ## スマホで使う
 
