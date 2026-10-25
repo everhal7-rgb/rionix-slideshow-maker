@@ -24,7 +24,11 @@ function update(){
       button.setAttribute('aria-label',`画像${index+1}を${delta<0?'前':'後'}へ`);
       button.onclick=()=>{[clips[index],clips[index+delta]]=[clips[index+delta],clips[index]];clearResult();update();};buttons.append(button);
     }
-    body.append(title,label,buttons);row.append(img,body);$('clips').append(row);
+    const motionLabel=document.createElement('label');motionLabel.textContent='画像の動き';
+    const motion=document.createElement('select');motion.setAttribute('aria-label',`画像${index+1}の動き`);
+    for(const [value,text] of [['none','動かさない'],['in','ゆっくり寄る'],['out','ゆっくり引く']]){const option=document.createElement('option');option.value=value;option.textContent=text;motion.append(option);}
+    motion.value=clip.motion||'none';motion.onchange=()=>{clip.motion=motion.value;clearResult();draw($('canvas'),clips[0]);};motionLabel.append(motion);
+    body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
   });summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
 function summary(){const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
@@ -33,6 +37,7 @@ function summary(){const total=duration(clips);$('total').textContent=`合計 ${
 $('images').onchange=async e=>{setBusy(true);status('画像を読み込んでいます…');try{const next=await loadImages([...e.target.files]);disposeImages(clips);clips=next;clearResult();status('画像を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);update();}};
 $('audio').onchange=async e=>{setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
+$('transition').onchange=()=>{clearResult();};
 async function run(record){
   if(busy)return;
   try{
@@ -41,7 +46,7 @@ async function run(record){
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
-    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
+    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,fadeSeconds:Number($('transition').value),signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
     if(blob){resultBlob=blob;resultURL=URL.createObjectURL(blob);$('video').src=resultURL;$('save').href=resultURL;$('save').download=`RIONIX_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;$('result').hidden=false;$('size').textContent=`MP4 · ${(blob.size/1024**2).toFixed(1)} MB · ${$('canvas').width}×${$('canvas').height}`;status('MP4を生成しました。再生で映像・音声を確認してから保存してください。');}
     else status('プレビューが終わりました。');
   }catch(err){status(err.message||'処理に失敗しました。720pまたは別の素材で試してください。',true);}

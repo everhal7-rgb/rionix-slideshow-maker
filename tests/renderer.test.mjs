@@ -23,7 +23,7 @@ function setup({bad=false}={}) {
  }
  globalThis.MediaRecorder=window.MediaRecorder=Recorder;
  const audio={element};const renderer=new Renderer();renderer.bind=async()=>{renderer.context=context;renderer.source=source;};
- const canvas={height:720,width:1280,getContext:()=>({fillRect(){},drawImage(){}}),captureStream:()=>({addTrack(){},getTracks:()=>[{stop(){ended++}}]})};
+ const canvas={height:720,width:1280,getContext:()=>({fillRect(){},drawImage(){},save(){},restore(){},beginPath(){},rect(){},clip(){}}),captureStream:()=>({addTrack(){},getTracks:()=>[{stop(){ended++}}]})};
  const clips=[{seconds:1,bitmap:{width:1280,height:720}}];
  return {renderer,opts:{canvas,clips,audio,total:.12,record:true,onProgress(){}},counts:()=>({ended,paused,disconnected})};
 }

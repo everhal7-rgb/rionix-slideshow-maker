@@ -1,8 +1,8 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c1020"><title>RIONIX 紙芝居動画メーカー</title><style>:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#0c1020;color:#eef1ff;font-size:16px}*{box-sizing:border-box}body{margin:0}main{max-width:760px;margin:auto;padding:28px 18px 60px}header{margin:10px 0 26px}.brand{color:#9dacf9;font-size:12px;font-weight:800;letter-spacing:.2em}h1{font-size:28px;line-height:1.35;margin:12px 0}h2{font-size:18px;margin:0 0 18px}p{line-height:1.8;color:#adb8d6;font-size:14px}.badge{font-size:12px;background:#263458;padding:5px 9px;border-radius:20px;vertical-align:middle}section,fieldset{border:1px solid #29334e;border-radius:18px;background:#141c30;padding:20px;margin:0 0 16px;min-width:0}fieldset{padding:0;border:0;background:none}label{display:block;margin:12px 0;font-size:14px;color:#d4dcf6}input,select,button,.button{font:inherit;min-height:48px;border-radius:10px;border:1px solid #435174;background:#202c49;color:#f2f4ff;padding:11px 13px}input[type=file]{width:100%;font-size:13px;padding:10px}input::file-selector-button{background:#c7d0ff;color:#182044;border:0;border-radius:6px;padding:8px;margin-right:8px}button,.button{cursor:pointer;text-align:center;font-weight:700;text-decoration:none;display:inline-block}button:disabled{opacity:.4;cursor:default}.primary{background:#c5cfff;color:#17204a;border-color:#c5cfff}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions .primary{grid-column:1/-1}.clip{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid #29334e}.clip img{width:100px;height:70px;object-fit:contain;background:#090d17;border-radius:8px}.clipbody{min-width:0;flex:1}.clip strong{display:block;overflow-wrap:anywhere;font-size:14px}.clip input{width:76px;margin-left:10px}.move{display:flex;gap:8px}.move button{padding:8px 12px;font-size:13px}canvas,video{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px}select{width:100%}.status{font-size:14px;line-height:1.7;color:#d7def9;padding:12px 0;overflow-wrap:anywhere}.error{color:#ffbdbe}progress{width:100%;height:12px;accent-color:#abbcff}#elapsed,#size{font-size:12px;color:#bac5e3}#timeline{font-size:13px;line-height:1.8;color:#aebcf4}#total{color:#dce4ff}#cancel{width:100%;margin-top:12px}.hint{font-size:12px}details{font-size:13px;line-height:1.8;color:#b4c1de}summary{cursor:pointer;padding:12px 0}#result .actions{margin-top:16px}[hidden]{display:none!important}:focus-visible{outline:3px solid #e7b6ff;outline-offset:3px}@media(max-width:380px){main{padding:16px 12px}section{padding:15px}.clip img{width:78px}.clip input{margin-left:4px}.move button{padding:8px}}
 </style></head><body><main>
-<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>3枚から、<br>小さな映像を。 <span class="badge">v0.1</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
+<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>3枚から、<br>小さな映像を。 <span class="badge">v0.2</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
 <fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像3枚 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">3枚をまとめて選択 · 1枚15MB以下。読み直すと3枚とも入れ替わります。</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
-<section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><div id="timeline"></div><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。画像全体を表示し、余白は黒になります。</p></section></fieldset>
+<section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><div id="timeline"></div><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
 <section><h2>03 確認して、動画にする</h2><canvas id="canvas" width="1280" height="720" aria-label="動画プレビュー"></canvas><p class="hint">生成中は音を鳴らしません。画面を開いたままお待ちください。生成には動画と同程度の時間がかかります。</p><div class="actions"><button id="preview" disabled>▶ 音付きプレビュー</button><button id="generate" class="primary" disabled>MP4を生成する</button></div><button id="cancel" hidden>中止する</button><div id="status" class="status" role="status" aria-live="polite">素材を選んでください。</div><progress id="progress" max="30" value="0" aria-label="処理の進捗"></progress><div id="elapsed">0 秒</div></section>
 <section id="result" hidden><h2>04 再生して保存</h2><video id="video" controls playsinline></video><p id="size"></p><div class="actions"><a id="save" class="button primary">MP4を保存</a><button id="share">共有して保存</button></div><p class="hint">保存後はChromeの「ダウンロード」から開けます。ページを閉じる前に保存してください。</p></section>
 <details><summary>端末の対応状況・困ったとき</summary><p id="capability"></p><p>失敗したら、720p・15秒で試し、他のアプリを閉じてください。画面ロックやアプリ切り替えでは処理を中止します。画像や設定はページを閉じると消えます。</p><p>MP4に非対応の端末では生成できません。無料の代替手順はソース付属のREADMEに記載しています。</p></details>
@@ -18,14 +18,61 @@ function clipAt(clips, seconds) {
   let end = 0;
   return clips.find(c => seconds < (end += Number(c.seconds))) || clips.at(-1);
 }
-function draw(canvas, clip) {
+const clamp01 = n => Math.max(0, Math.min(1, n));
+// A transition occupies the tail of the outgoing clip; total duration never changes.
+function sceneAt(clips, seconds, fadeSeconds = 0) {
+  if (!clips.length) return [];
+  const t = Math.max(0, seconds), fade = Math.max(0, Math.min(1, Number(fadeSeconds) || 0));
+  let start = 0;
+  for (let i = 0; i < clips.length; i++) {
+    const length = Number(clips[i].seconds), end = start + length;
+    const incoming = i ? Math.min(fade, Number(clips[i-1].seconds) / 2) : 0;
+    const progress = clamp01((t - start + incoming) / (length + incoming));
+    if (t < end || i === clips.length - 1) {
+      const layers = [{clip: clips[i], progress, opacity: 1}];
+      const outgoing = Math.min(fade, length / 2);
+      if (i < clips.length - 1 && outgoing > 0 && t >= end - outgoing) {
+        const elapsed = t - (end - outgoing);
+        layers.push({clip: clips[i+1], progress: clamp01(elapsed / (Number(clips[i+1].seconds) + outgoing)), opacity: clamp01(elapsed / outgoing)});
+      }
+      return layers;
+    }
+    start = end;
+  }
+}
+function zoomAt(motion, progress) {
+  const p = clamp01(progress);
+  return motion === 'in' ? 1 + 0.08*p : motion === 'out' ? 1.08 - 0.08*p : 1;
+}
+function paint(canvas, clip, progress = 0) {
   const ctx = canvas.getContext('2d', {alpha: false});
+  ctx.globalAlpha = 1;
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   if (!clip) return;
   const img = clip.bitmap;
   const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
   const w = img.width * scale, h = img.height * scale;
-  ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+  const zoom = zoomAt(clip.motion, progress);
+  // Keep the original letterbox fixed; zoom crops only within the image rectangle.
+  ctx.save(); ctx.beginPath();ctx.rect((canvas.width-w)/2,(canvas.height-h)/2,w,h);ctx.clip();
+  ctx.drawImage(img, (canvas.width - w*zoom) / 2, (canvas.height - h*zoom) / 2, w*zoom, h*zoom);
+  ctx.restore();
+}
+const fadeLayers = new WeakMap();
+function draw(canvas, clip) { paint(canvas, clip); }
+function drawFrame(canvas, clips, seconds, fadeSeconds = 0) {
+  const layers = sceneAt(clips, seconds, fadeSeconds);
+  paint(canvas, layers[0]?.clip, layers[0]?.progress);
+  if (layers.length < 2 || layers[1].opacity <= 0) return;
+  let layer = fadeLayers.get(canvas);
+  if (!layer) { layer = document.createElement('canvas'); fadeLayers.set(canvas,layer); }
+  if (layer.width !== canvas.width || layer.height !== canvas.height) {layer.width = canvas.width;layer.height = canvas.height;}
+  paint(layer,layers[1].clip,layers[1].progress);
+  const ctx = canvas.getContext('2d');ctx.save();ctx.globalAlpha=layers[1].opacity;ctx.drawImage(layer,0,0);ctx.restore();
+}
+function releaseDrawBuffers(canvas) {
+  const layer=fadeLayers.get(canvas);
+  if(layer){layer.width=1;layer.height=1;fadeLayers.delete(canvas);}
 }
 
 async function loadImages(files) {
@@ -44,7 +91,7 @@ async function loadImages(files) {
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
         ctx.drawImage(bitmap,(240-bitmap.width*s)/2,(135-bitmap.height*s)/2,bitmap.width*s,bitmap.height*s);
-        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5});
+        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5,motion:'in'});
       } finally {original.close();}
     }
     return clips;
@@ -85,7 +132,7 @@ class Renderer {
     await this.context.resume();
     if(this.context.state!=='running') throw new Error('音声処理を開始できません。もう一度ボタンを押してください。');
   }
-  async run({canvas,clips,audio,total,record,signal,onProgress}){
+  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0}){
     const support=capability(); if(record&&support.error)throw new Error(support.error);
     let stream,recorder,dest,osc,gain,wake,timer,deadline,hidden,abort,stateChange,stalled,recDone;
     let stopped=false, failure=null, chunks=[], bytes=0;
@@ -99,7 +146,7 @@ class Renderer {
         dest=context.createMediaStreamDestination(); this.source.connect(dest);
         osc=context.createOscillator();gain=context.createGain();gain.gain.value=0;
         osc.connect(gain).connect(dest);osc.start();
-        draw(canvas,clips[0]);stream=canvas.captureStream(30);
+        drawFrame(canvas,clips,0,fadeSeconds);stream=canvas.captureStream(30);
         for(const track of dest.stream.getAudioTracks())stream.addTrack(track);
         recorder=new MediaRecorder(stream,{mimeType:support.mime,videoBitsPerSecond:canvas.height===1080?8_000_000:4_500_000,audioBitsPerSecond:160_000});
         recDone=new Promise((resolve,reject)=>{
@@ -139,7 +186,7 @@ class Renderer {
           // A media stall cannot silently create a desynchronized "successful" file.
           if(!el.ended && Math.abs(el.currentTime-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
           if(t>=total){stop();onProgress(total);resolve();return;}
-          draw(canvas,clipAt(clips,Math.max(0,t)));onProgress(Math.max(0,t));
+          drawFrame(canvas,clips,Math.max(0,t),fadeSeconds);onProgress(Math.max(0,t));
           timer=setTimeout(tick,1000/30);
         };tick();
       });
@@ -151,7 +198,7 @@ class Renderer {
       if(blob.size<1000 || !header.includes('ftyp') || !header.includes('avc1') || !header.includes('mp4a'))throw new Error('H.264＋AACのMP4を確認できませんでした。この端末では生成できない可能性があります。');
       return blob;
     } finally{
-      stopped=true;clearTimeout(timer);clearTimeout(deadline);this.cancel=null;
+      releaseDrawBuffers(canvas);stopped=true;clearTimeout(timer);clearTimeout(deadline);this.cancel=null;
       audio.element.pause();
       if(recorder&&recorder.state!=='inactive')recorder.stop();
       stream?.getTracks().forEach(t=>t.stop());osc?.stop();osc?.disconnect();gain?.disconnect();this.source?.disconnect();
@@ -185,7 +232,11 @@ function update(){
       button.setAttribute('aria-label',`画像${index+1}を${delta<0?'前':'後'}へ`);
       button.onclick=()=>{[clips[index],clips[index+delta]]=[clips[index+delta],clips[index]];clearResult();update();};buttons.append(button);
     }
-    body.append(title,label,buttons);row.append(img,body);$('clips').append(row);
+    const motionLabel=document.createElement('label');motionLabel.textContent='画像の動き';
+    const motion=document.createElement('select');motion.setAttribute('aria-label',`画像${index+1}の動き`);
+    for(const [value,text] of [['none','動かさない'],['in','ゆっくり寄る'],['out','ゆっくり引く']]){const option=document.createElement('option');option.value=value;option.textContent=text;motion.append(option);}
+    motion.value=clip.motion||'none';motion.onchange=()=>{clip.motion=motion.value;clearResult();draw($('canvas'),clips[0]);};motionLabel.append(motion);
+    body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
   });summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
 function summary(){const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
@@ -194,6 +245,7 @@ function summary(){const total=duration(clips);$('total').textContent=`合計 ${
 $('images').onchange=async e=>{setBusy(true);status('画像を読み込んでいます…');try{const next=await loadImages([...e.target.files]);disposeImages(clips);clips=next;clearResult();status('画像を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);update();}};
 $('audio').onchange=async e=>{setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
+$('transition').onchange=()=>{clearResult();};
 async function run(record){
   if(busy)return;
   try{
@@ -202,7 +254,7 @@ async function run(record){
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
-    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
+    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,fadeSeconds:Number($('transition').value),signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
     if(blob){resultBlob=blob;resultURL=URL.createObjectURL(blob);$('video').src=resultURL;$('save').href=resultURL;$('save').download=`RIONIX_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;$('result').hidden=false;$('size').textContent=`MP4 · ${(blob.size/1024**2).toFixed(1)} MB · ${$('canvas').width}×${$('canvas').height}`;status('MP4を生成しました。再生で映像・音声を確認してから保存してください。');}
     else status('プレビューが終わりました。');
   }catch(err){status(err.message||'処理に失敗しました。720pまたは別の素材で試してください。',true);}

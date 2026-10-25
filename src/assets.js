@@ -14,7 +14,7 @@ export async function loadImages(files) {
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
         ctx.drawImage(bitmap,(240-bitmap.width*s)/2,(135-bitmap.height*s)/2,bitmap.width*s,bitmap.height*s);
-        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5});
+        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5,motion:'in'});
       } finally {original.close();}
     }
     return clips;

@@ -1,4 +1,4 @@
-import {clipAt,draw} from './timeline.js';
+import {drawFrame,releaseDrawBuffers} from './timeline.js';
 export const MIME_TYPES=['video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1.42E028,mp4a.40.2'];
 export function capability(){
   if (!window.isSecureContext) return {error:'HTTPSのURLをChromeで開いてください。'};
@@ -17,7 +17,7 @@ export class Renderer {
     await this.context.resume();
     if(this.context.state!=='running') throw new Error('音声処理を開始できません。もう一度ボタンを押してください。');
   }
-  async run({canvas,clips,audio,total,record,signal,onProgress}){
+  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0}){
     const support=capability(); if(record&&support.error)throw new Error(support.error);
     let stream,recorder,dest,osc,gain,wake,timer,deadline,hidden,abort,stateChange,stalled,recDone;
     let stopped=false, failure=null, chunks=[], bytes=0;
@@ -31,7 +31,7 @@ export class Renderer {
         dest=context.createMediaStreamDestination(); this.source.connect(dest);
         osc=context.createOscillator();gain=context.createGain();gain.gain.value=0;
         osc.connect(gain).connect(dest);osc.start();
-        draw(canvas,clips[0]);stream=canvas.captureStream(30);
+        drawFrame(canvas,clips,0,fadeSeconds);stream=canvas.captureStream(30);
         for(const track of dest.stream.getAudioTracks())stream.addTrack(track);
         recorder=new MediaRecorder(stream,{mimeType:support.mime,videoBitsPerSecond:canvas.height===1080?8_000_000:4_500_000,audioBitsPerSecond:160_000});
         recDone=new Promise((resolve,reject)=>{
@@ -71,7 +71,7 @@ export class Renderer {
           // A media stall cannot silently create a desynchronized "successful" file.
           if(!el.ended && Math.abs(el.currentTime-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
           if(t>=total){stop();onProgress(total);resolve();return;}
-          draw(canvas,clipAt(clips,Math.max(0,t)));onProgress(Math.max(0,t));
+          drawFrame(canvas,clips,Math.max(0,t),fadeSeconds);onProgress(Math.max(0,t));
           timer=setTimeout(tick,1000/30);
         };tick();
       });
@@ -83,7 +83,7 @@ export class Renderer {
       if(blob.size<1000 || !header.includes('ftyp') || !header.includes('avc1') || !header.includes('mp4a'))throw new Error('H.264＋AACのMP4を確認できませんでした。この端末では生成できない可能性があります。');
       return blob;
     } finally{
-      stopped=true;clearTimeout(timer);clearTimeout(deadline);this.cancel=null;
+      releaseDrawBuffers(canvas);stopped=true;clearTimeout(timer);clearTimeout(deadline);this.cancel=null;
       audio.element.pause();
       if(recorder&&recorder.state!=='inactive')recorder.stop();
       stream?.getTracks().forEach(t=>t.stop());osc?.stop();osc?.disconnect();gain?.disconnect();this.source?.disconnect();
