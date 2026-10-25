@@ -1,4 +1,4 @@
-import {duration,validate,draw} from './timeline.js';
+import {duration,validate,draw,distributeTime} from './timeline.js';
 import {loadImages,loadAudio,disposeImages,disposeAudio} from './assets.js';
 import {Renderer,capability} from './renderer.js';
 const $=id=>document.getElementById(id), renderer=new Renderer();
@@ -7,7 +7,14 @@ const support=capability();
 $('capability').textContent=support.error||'このブラウザーはMP4録画対応を申告しています。実際の生成で確認します。';
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
 function clearResult(){if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
-function setBusy(value){busy=value;$('editor').disabled=value;$('preview').disabled=value||clips.length!==3||!audio;$('generate').disabled=value||clips.length!==3||!audio||!!support.error;$('cancel').hidden=!value||!controller;}
+function setBusy(value){
+  busy=value;let valid=true;try{validate(clips);}catch{valid=false;}
+  $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
+  $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
+  $('preview').disabled=value||!valid||!audio;
+  $('generate').disabled=value||!valid||!audio||!!support.error;
+  $('cancel').hidden=!value||!controller;
+}
 function update(){
   $('clips').replaceChildren();
   clips.forEach((clip,index)=>{
@@ -16,25 +23,34 @@ function update(){
     const body=document.createElement('div');body.className='clipbody';
     const title=document.createElement('strong');title.textContent=`${index+1}. ${clip.name}`;
     const label=document.createElement('label');label.textContent='表示時間（秒）';
-    const input=document.createElement('input');input.type='number';input.min=1;input.max=28;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
-    input.oninput=()=>{clip.seconds=Number(input.value);clearResult();summary();};label.append(input);
+    const input=document.createElement('input');input.type='number';input.min=1;input.max=30;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
+    input.oninput=()=>{clip.seconds=Number(input.value);clearResult();summary();setBusy(busy);};label.append(input);
     const buttons=document.createElement('div');buttons.className='move';
     for(const [delta,text] of [[-1,'↑ 前へ'],[1,'↓ 後へ']]){
       const button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=index+delta<0||index+delta>=clips.length;
       button.setAttribute('aria-label',`画像${index+1}を${delta<0?'前':'後'}へ`);
       button.onclick=()=>{[clips[index],clips[index+delta]]=[clips[index+delta],clips[index]];clearResult();update();};buttons.append(button);
     }
+    const remove=document.createElement('button');remove.type='button';remove.textContent='削除';remove.setAttribute('aria-label',`画像${index+1}を削除`);
+    remove.onclick=()=>{disposeImages(clips.splice(index,1));clearResult();update();status('画像を削除しました。合計時間を確認してください。');};buttons.append(remove);
     const motionLabel=document.createElement('label');motionLabel.textContent='画像の動き';
     const motion=document.createElement('select');motion.setAttribute('aria-label',`画像${index+1}の動き`);
     for(const [value,text] of [['none','動かさない'],['in','ゆっくり寄る'],['out','ゆっくり引く']]){const option=document.createElement('option');option.value=value;option.textContent=text;motion.append(option);}
     motion.value=clip.motion||'none';motion.onchange=()=>{clip.motion=motion.value;clearResult();draw($('canvas'),clips[0]);};motionLabel.append(motion);
     body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
-  });summary();draw($('canvas'),clips[0]);setBusy(busy);
+  });if(!clips.length){const empty=document.createElement('p');empty.textContent='画像を追加してください。';$('clips').append(empty);}summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
-function summary(){const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
+function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
   let cursor=0;$('timeline').textContent=clips.map((c,i)=>{const start=cursor;cursor+=Number(c.seconds);return `${i+1}枚目 ${start}〜${cursor}秒`;}).join(' → ');
 }
-$('images').onchange=async e=>{setBusy(true);status('画像を読み込んでいます…');try{const next=await loadImages([...e.target.files]);disposeImages(clips);clips=next;clearResult();status('画像を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);update();}};
+$('images').onchange=async e=>{
+  const files=[...e.target.files];if(!files.length)return;
+  setBusy(true);status('画像を読み込んでいます…');
+  try{const next=await loadImages(files,clips.length);clips.push(...next);clearResult();status('画像を追加しました。合計が範囲外なら「15秒に配分」「30秒に配分」で調整できます。');}
+  catch(err){status(err.message,true);}
+  finally{e.target.value='';setBusy(false);update();}
+};
+for(const total of [15,30])$('fit'+total).onclick=()=>{distributeTime(clips,total);clearResult();update();status(`合計${total}秒に配分しました。各画像の秒数は個別に変更できます。`);};
 $('audio').onchange=async e=>{setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
 $('transition').onchange=()=>{clearResult();};

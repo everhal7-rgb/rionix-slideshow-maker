@@ -1,15 +1,17 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0c1020"><title>RIONIX 紙芝居動画メーカー</title><style>:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#0c1020;color:#eef1ff;font-size:16px}*{box-sizing:border-box}body{margin:0}main{max-width:760px;margin:auto;padding:28px 18px 60px}header{margin:10px 0 26px}.brand{color:#9dacf9;font-size:12px;font-weight:800;letter-spacing:.2em}h1{font-size:28px;line-height:1.35;margin:12px 0}h2{font-size:18px;margin:0 0 18px}p{line-height:1.8;color:#adb8d6;font-size:14px}.badge{font-size:12px;background:#263458;padding:5px 9px;border-radius:20px;vertical-align:middle}section,fieldset{border:1px solid #29334e;border-radius:18px;background:#141c30;padding:20px;margin:0 0 16px;min-width:0}fieldset{padding:0;border:0;background:none}label{display:block;margin:12px 0;font-size:14px;color:#d4dcf6}input,select,button,.button{font:inherit;min-height:48px;border-radius:10px;border:1px solid #435174;background:#202c49;color:#f2f4ff;padding:11px 13px}input[type=file]{width:100%;font-size:13px;padding:10px}input::file-selector-button{background:#c7d0ff;color:#182044;border:0;border-radius:6px;padding:8px;margin-right:8px}button,.button{cursor:pointer;text-align:center;font-weight:700;text-decoration:none;display:inline-block}button:disabled{opacity:.4;cursor:default}.primary{background:#c5cfff;color:#17204a;border-color:#c5cfff}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.actions .primary{grid-column:1/-1}.clip{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid #29334e}.clip img{width:100px;height:70px;object-fit:contain;background:#090d17;border-radius:8px}.clipbody{min-width:0;flex:1}.clip strong{display:block;overflow-wrap:anywhere;font-size:14px}.clip input{width:76px;margin-left:10px}.move{display:flex;gap:8px}.move button{padding:8px 12px;font-size:13px}canvas,video{display:block;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px}select{width:100%}.status{font-size:14px;line-height:1.7;color:#d7def9;padding:12px 0;overflow-wrap:anywhere}.error{color:#ffbdbe}progress{width:100%;height:12px;accent-color:#abbcff}#elapsed,#size{font-size:12px;color:#bac5e3}#timeline{font-size:13px;line-height:1.8;color:#aebcf4}#total{color:#dce4ff}#cancel{width:100%;margin-top:12px}.hint{font-size:12px}details{font-size:13px;line-height:1.8;color:#b4c1de}summary{cursor:pointer;padding:12px 0}#result .actions{margin-top:16px}[hidden]{display:none!important}:focus-visible{outline:3px solid #e7b6ff;outline-offset:3px}@media(max-width:380px){main{padding:16px 12px}section{padding:15px}.clip img{width:78px}.clip input{margin-left:4px}.move button{padding:8px}}
+
+.move{flex-wrap:wrap}.clip img{flex-shrink:0}
 </style></head><body><main>
-<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>3枚から、<br>小さな映像を。 <span class="badge">v0.2</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
-<fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像3枚 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">3枚をまとめて選択 · 1枚15MB以下。読み直すと3枚とも入れ替わります。</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
-<section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><div id="timeline"></div><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
+<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.3</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
+<fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
+<section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><p id="validation" class="error" role="status"></p><div class="actions"><button id="fit15" type="button" disabled>15秒に配分</button><button id="fit30" type="button" disabled>30秒に配分</button></div><p class="hint">全画像の時間を均等に近い整数秒へ変更します。余りは先頭から1秒ずつ加えます。</p><div id="timeline"></div><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
 <section><h2>03 確認して、動画にする</h2><canvas id="canvas" width="1280" height="720" aria-label="動画プレビュー"></canvas><p class="hint">生成中は音を鳴らしません。画面を開いたままお待ちください。生成には動画と同程度の時間がかかります。</p><div class="actions"><button id="preview" disabled>▶ 音付きプレビュー</button><button id="generate" class="primary" disabled>MP4を生成する</button></div><button id="cancel" hidden>中止する</button><div id="status" class="status" role="status" aria-live="polite">素材を選んでください。</div><progress id="progress" max="30" value="0" aria-label="処理の進捗"></progress><div id="elapsed">0 秒</div></section>
 <section id="result" hidden><h2>04 再生して保存</h2><video id="video" controls playsinline></video><p id="size"></p><div class="actions"><a id="save" class="button primary">MP4を保存</a><button id="share">共有して保存</button></div><p class="hint">保存後はChromeの「ダウンロード」から開けます。ページを閉じる前に保存してください。</p></section>
 <details><summary>端末の対応状況・困ったとき</summary><p id="capability"></p><p>失敗したら、720p・15秒で試し、他のアプリを閉じてください。画面ロックやアプリ切り替えでは処理を中止します。画像や設定はページを閉じると消えます。</p><p>MP4に非対応の端末では生成できません。無料の代替手順はソース付属のREADMEに記載しています。</p></details>
 <footer><p class="hint">RIONIX PROJECT · ブラウザー内処理 / 外部通信・解析SDKなし</p></footer></main><script type="module">function duration(clips) { return clips.reduce((sum, c) => sum + Number(c.seconds), 0); }
 function validate(clips) {
-  if (clips.length !== 3) throw new Error('画像を3枚選んでください。');
-  if (clips.some(c => !Number.isInteger(Number(c.seconds)) || c.seconds < 1 || c.seconds > 28)) throw new Error('各画像の時間は1〜28秒の整数にしてください。');
+  if (clips.length < 1 || clips.length > 10) throw new Error('画像を1〜10枚選んでください。');
+  if (clips.some(c => !Number.isInteger(Number(c.seconds)) || c.seconds < 1 || c.seconds > 30)) throw new Error('各画像の時間は1〜30秒の整数にしてください。');
   const total = duration(clips);
   if (total < 15 || total > 30) throw new Error('合計時間を15〜30秒にしてください。');
   return total;
@@ -75,8 +77,14 @@ function releaseDrawBuffers(canvas) {
   if(layer){layer.width=1;layer.height=1;fadeLayers.delete(canvas);}
 }
 
-async function loadImages(files) {
-  if (files.length !== 3) throw new Error('JPEG / PNGを一度に3枚選んでください。');
+function distributeTime(clips, total) {
+  if (!clips.length || clips.length > 10 || ![15,30].includes(total)) throw new Error('画像を1〜10枚選んでください。');
+  const base = Math.floor(total / clips.length), extra = total % clips.length;
+  clips.forEach((clip, i) => { clip.seconds = base + (i < extra ? 1 : 0); });
+}
+
+async function loadImages(files, existingCount = 0) {
+  if (!files.length || files.length + existingCount > 10) throw new Error('画像は合計10枚までです。追加する枚数を減らしてください。');
   const clips = [];
   try {
     for (const file of files) {
@@ -88,10 +96,12 @@ async function loadImages(files) {
         if (original.width * original.height > 50_000_000) throw new Error('画像が大きすぎます。5000万画素以下に縮小してください。');
         const scale = Math.min(1, 1920 / Math.max(original.width, original.height));
         const bitmap = await createImageBitmap(original, {resizeWidth:Math.max(1,Math.round(original.width*scale)),resizeHeight:Math.max(1,Math.round(original.height*scale)),resizeQuality:'high'});
+        const clip={id:crypto.randomUUID(),name:file.name,bitmap,seconds:5,motion:'in'};
+        clips.push(clip);
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
         ctx.drawImage(bitmap,(240-bitmap.width*s)/2,(135-bitmap.height*s)/2,bitmap.width*s,bitmap.height*s);
-        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5,motion:'in'});
+        clip.thumb=thumb.toDataURL('image/jpeg',0.7);
       } finally {original.close();}
     }
     return clips;
@@ -215,7 +225,14 @@ const support=capability();
 $('capability').textContent=support.error||'このブラウザーはMP4録画対応を申告しています。実際の生成で確認します。';
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
 function clearResult(){if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
-function setBusy(value){busy=value;$('editor').disabled=value;$('preview').disabled=value||clips.length!==3||!audio;$('generate').disabled=value||clips.length!==3||!audio||!!support.error;$('cancel').hidden=!value||!controller;}
+function setBusy(value){
+  busy=value;let valid=true;try{validate(clips);}catch{valid=false;}
+  $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
+  $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
+  $('preview').disabled=value||!valid||!audio;
+  $('generate').disabled=value||!valid||!audio||!!support.error;
+  $('cancel').hidden=!value||!controller;
+}
 function update(){
   $('clips').replaceChildren();
   clips.forEach((clip,index)=>{
@@ -224,25 +241,34 @@ function update(){
     const body=document.createElement('div');body.className='clipbody';
     const title=document.createElement('strong');title.textContent=`${index+1}. ${clip.name}`;
     const label=document.createElement('label');label.textContent='表示時間（秒）';
-    const input=document.createElement('input');input.type='number';input.min=1;input.max=28;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
-    input.oninput=()=>{clip.seconds=Number(input.value);clearResult();summary();};label.append(input);
+    const input=document.createElement('input');input.type='number';input.min=1;input.max=30;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
+    input.oninput=()=>{clip.seconds=Number(input.value);clearResult();summary();setBusy(busy);};label.append(input);
     const buttons=document.createElement('div');buttons.className='move';
     for(const [delta,text] of [[-1,'↑ 前へ'],[1,'↓ 後へ']]){
       const button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=index+delta<0||index+delta>=clips.length;
       button.setAttribute('aria-label',`画像${index+1}を${delta<0?'前':'後'}へ`);
       button.onclick=()=>{[clips[index],clips[index+delta]]=[clips[index+delta],clips[index]];clearResult();update();};buttons.append(button);
     }
+    const remove=document.createElement('button');remove.type='button';remove.textContent='削除';remove.setAttribute('aria-label',`画像${index+1}を削除`);
+    remove.onclick=()=>{disposeImages(clips.splice(index,1));clearResult();update();status('画像を削除しました。合計時間を確認してください。');};buttons.append(remove);
     const motionLabel=document.createElement('label');motionLabel.textContent='画像の動き';
     const motion=document.createElement('select');motion.setAttribute('aria-label',`画像${index+1}の動き`);
     for(const [value,text] of [['none','動かさない'],['in','ゆっくり寄る'],['out','ゆっくり引く']]){const option=document.createElement('option');option.value=value;option.textContent=text;motion.append(option);}
     motion.value=clip.motion||'none';motion.onchange=()=>{clip.motion=motion.value;clearResult();draw($('canvas'),clips[0]);};motionLabel.append(motion);
     body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
-  });summary();draw($('canvas'),clips[0]);setBusy(busy);
+  });if(!clips.length){const empty=document.createElement('p');empty.textContent='画像を追加してください。';$('clips').append(empty);}summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
-function summary(){const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
+function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
   let cursor=0;$('timeline').textContent=clips.map((c,i)=>{const start=cursor;cursor+=Number(c.seconds);return `${i+1}枚目 ${start}〜${cursor}秒`;}).join(' → ');
 }
-$('images').onchange=async e=>{setBusy(true);status('画像を読み込んでいます…');try{const next=await loadImages([...e.target.files]);disposeImages(clips);clips=next;clearResult();status('画像を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);update();}};
+$('images').onchange=async e=>{
+  const files=[...e.target.files];if(!files.length)return;
+  setBusy(true);status('画像を読み込んでいます…');
+  try{const next=await loadImages(files,clips.length);clips.push(...next);clearResult();status('画像を追加しました。合計が範囲外なら「15秒に配分」「30秒に配分」で調整できます。');}
+  catch(err){status(err.message,true);}
+  finally{e.target.value='';setBusy(false);update();}
+};
+for(const total of [15,30])$('fit'+total).onclick=()=>{distributeTime(clips,total);clearResult();update();status(`合計${total}秒に配分しました。各画像の秒数は個別に変更できます。`);};
 $('audio').onchange=async e=>{setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
 $('transition').onchange=()=>{clearResult();};

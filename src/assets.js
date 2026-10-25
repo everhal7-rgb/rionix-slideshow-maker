@@ -1,5 +1,5 @@
-export async function loadImages(files) {
-  if (files.length !== 3) throw new Error('JPEG / PNGを一度に3枚選んでください。');
+export async function loadImages(files, existingCount = 0) {
+  if (!files.length || files.length + existingCount > 10) throw new Error('画像は合計10枚までです。追加する枚数を減らしてください。');
   const clips = [];
   try {
     for (const file of files) {
@@ -11,10 +11,12 @@ export async function loadImages(files) {
         if (original.width * original.height > 50_000_000) throw new Error('画像が大きすぎます。5000万画素以下に縮小してください。');
         const scale = Math.min(1, 1920 / Math.max(original.width, original.height));
         const bitmap = await createImageBitmap(original, {resizeWidth:Math.max(1,Math.round(original.width*scale)),resizeHeight:Math.max(1,Math.round(original.height*scale)),resizeQuality:'high'});
+        const clip={id:crypto.randomUUID(),name:file.name,bitmap,seconds:5,motion:'in'};
+        clips.push(clip);
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
         ctx.drawImage(bitmap,(240-bitmap.width*s)/2,(135-bitmap.height*s)/2,bitmap.width*s,bitmap.height*s);
-        clips.push({id:crypto.randomUUID(),name:file.name,bitmap,thumb:thumb.toDataURL('image/jpeg',0.7),seconds:5,motion:'in'});
+        clip.thumb=thumb.toDataURL('image/jpeg',0.7);
       } finally {original.close();}
     }
     return clips;

@@ -1,7 +1,7 @@
 export function duration(clips) { return clips.reduce((sum, c) => sum + Number(c.seconds), 0); }
 export function validate(clips) {
-  if (clips.length !== 3) throw new Error('画像を3枚選んでください。');
-  if (clips.some(c => !Number.isInteger(Number(c.seconds)) || c.seconds < 1 || c.seconds > 28)) throw new Error('各画像の時間は1〜28秒の整数にしてください。');
+  if (clips.length < 1 || clips.length > 10) throw new Error('画像を1〜10枚選んでください。');
+  if (clips.some(c => !Number.isInteger(Number(c.seconds)) || c.seconds < 1 || c.seconds > 30)) throw new Error('各画像の時間は1〜30秒の整数にしてください。');
   const total = duration(clips);
   if (total < 15 || total > 30) throw new Error('合計時間を15〜30秒にしてください。');
   return total;
@@ -65,4 +65,10 @@ export function drawFrame(canvas, clips, seconds, fadeSeconds = 0) {
 export function releaseDrawBuffers(canvas) {
   const layer=fadeLayers.get(canvas);
   if(layer){layer.width=1;layer.height=1;fadeLayers.delete(canvas);}
+}
+
+export function distributeTime(clips, total) {
+  if (!clips.length || clips.length > 10 || ![15,30].includes(total)) throw new Error('画像を1〜10枚選んでください。');
+  const base = Math.floor(total / clips.length), extra = total % clips.length;
+  clips.forEach((clip, i) => { clip.seconds = base + (i < extra ? 1 : 0); });
 }
