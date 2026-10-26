@@ -1,15 +1,17 @@
+import {makeProject,restoreProject,projectStore,projectError} from './project.js';
 import {audioRange} from './audio-range.js';
 import {duration,validate,draw,distributeTime} from './timeline.js';
 import {loadImages,loadAudio,disposeImages,disposeAudio} from './assets.js';
 import {Renderer,capability} from './renderer.js';
 const $=id=>document.getElementById(id), renderer=new Renderer();
 let clips=[],audio=null,busy=false,resultURL=null,resultBlob=null,controller;
+let dirty=false;
 const support=capability();
 $('capability').textContent=support.error||'このブラウザーはMP4録画対応を申告しています。実際の生成で確認します。';
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
-function clearResult(){if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
+function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
+  busy=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -68,7 +70,7 @@ async function run(record){
   try{
     const total=validate(clips);if(!audio)throw new Error('音声を1本選んでください。');
     const audioStart=audioRange($('audioStart').value,audio.element.duration,total).start;
-    controller=new AbortController();setBusy(true);clearResult();
+    controller=new AbortController();setBusy(true);clearResult(false);
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
@@ -80,5 +82,33 @@ async function run(record){
 }
 $('preview').onclick=()=>run(false);$('generate').onclick=()=>run(true);$('cancel').onclick=()=>controller?.abort();
 $('share').onclick=async()=>{if(!resultBlob)return;const file=new File([resultBlob],$('save').download,{type:'video/mp4'});try{if(!navigator.canShare?.({files:[file]}))throw new Error('この端末では共有保存に対応していません。「MP4を保存」を使ってください。');await navigator.share({files:[file],title:'RIONIX 動画'});}catch(e){if(e.name!=='AbortError')status(e.message,true);}};
-window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(busy||dirty){e.preventDefault();e.returnValue='';}});
 setBusy(false);
+
+$('saveProject').onclick=async()=>{
+  if(busy)return;setBusy(true);$('projectStatus').textContent='素材と設定を保存しています…';
+  try{
+    if(!$('audioStart').value.trim())throw new Error('音声の開始位置を入力してから保存してください。');
+    const project=makeProject(clips,audio,{resolution:$('resolution').value,transition:$('transition').value,audioStart:Number($('audioStart').value)});
+    await projectStore('save',project);dirty=false;
+    $('projectStatus').textContent=`保存しました（${new Date(project.savedAt).toLocaleString('ja-JP')}）。ページを閉じても「保存した編集を開く」で再開できます。`;
+  }catch(e){$('projectStatus').textContent=projectError(e);}
+  finally{setBusy(false);}
+};
+$('loadProject').onclick=async()=>{
+  if(busy)return;
+  if(dirty&&!confirm('未保存の変更を破棄して、保存した編集を開きますか？'))return;
+  setBusy(true);$('projectStatus').textContent='保存した素材を読み込んでいます…';
+  try{
+    const project=await projectStore('load');if(!project)throw new Error('保存した編集はありません。素材を選んで「この端末に保存」を押してください。');
+    const next=await restoreProject(project);
+    disposeImages(clips);disposeAudio(audio);clips=next.clips;audio=next.audio;
+    $('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;
+    $('audioName').textContent=audio?`${audio.name} / ${audio.element.duration.toFixed(1)}秒`:'音声はまだ選ばれていません。';
+    clearResult(false);dirty=false;update();
+    $('progress').value=0;$('elapsed').textContent='0 秒';
+    $('projectStatus').textContent=`保存した編集を開きました（${new Date(project.savedAt).toLocaleString('ja-JP')}）。`;
+    status('編集を再開できます。プレビューで確認してください。');
+  }catch(e){$('projectStatus').textContent=projectError(e);}
+  finally{setBusy(false);}
+};

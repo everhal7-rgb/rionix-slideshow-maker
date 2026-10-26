@@ -11,7 +11,7 @@ export async function loadImages(files, existingCount = 0) {
         if (original.width * original.height > 50_000_000) throw new Error('画像が大きすぎます。5000万画素以下に縮小してください。');
         const scale = Math.min(1, 1920 / Math.max(original.width, original.height));
         const bitmap = await createImageBitmap(original, {resizeWidth:Math.max(1,Math.round(original.width*scale)),resizeHeight:Math.max(1,Math.round(original.height*scale)),resizeQuality:'high'});
-        const clip={id:crypto.randomUUID(),name:file.name,bitmap,seconds:5,motion:'in'};
+        const clip={id:crypto.randomUUID(),name:file.name,file,bitmap,seconds:5,motion:'in'};
         clips.push(clip);
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
@@ -34,7 +34,7 @@ export async function loadAudio(file) {
       element.onloadedmetadata=()=>done(); element.onerror=()=>done(new Error('この音声形式は再生できません。MP3を選んでください。'));
     });
     if (!Number.isFinite(element.duration)||element.duration<=0) throw new Error('音声の長さを取得できません。別のMP3を選んでください。');
-    return {name:file.name,url,element};
+    return {name:file.name,file,url,element};
   } catch(e){element.removeAttribute('src'); element.load();URL.revokeObjectURL(url);throw e;}
 }
 export function disposeAudio(audio){if(audio){audio.element.pause();audio.element.removeAttribute('src');audio.element.load();URL.revokeObjectURL(audio.url);}}

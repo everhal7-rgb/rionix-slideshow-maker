@@ -2,12 +2,12 @@
 
 .move{flex-wrap:wrap}.clip img{flex-shrink:0}
 </style></head><body><main>
-<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.4</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
-<fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><label>音声の開始位置（秒）<input id="audioStart" type="number" min="0" step="0.1" inputmode="decimal" value="0" aria-describedby="audioStartHint audioRange"></label><p id="audioStartHint" class="hint">例：1分20秒から使うなら「80」。音付きプレビューとMP4に反映します。音声を入れ替えると0秒に戻ります。</p><p id="audioRange" class="hint" role="status">音声を選ぶと使用区間を表示します。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
+<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.5</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
+<section><h2>編集を保存・再開</h2><div class="actions"><button id="saveProject" type="button" disabled>この端末に保存</button><button id="loadProject" type="button">保存した編集を開く</button></div><p id="projectStatus" role="status">手動保存です。前回の編集は「保存した編集を開く」で再開できます。</p><p class="hint">画像・音声・設定をこのChromeに1件保存します。再度保存すると上書きします。MP4は別途ダウンロードしてください。サイトデータの削除や端末の容量整理で消える場合があります。シークレットモードでは終了時に消えます。</p></section><fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><label>音声の開始位置（秒）<input id="audioStart" type="number" min="0" step="0.1" inputmode="decimal" value="0" aria-describedby="audioStartHint audioRange"></label><p id="audioStartHint" class="hint">例：1分20秒から使うなら「80」。音付きプレビューとMP4に反映します。音声を入れ替えると0秒に戻ります。</p><p id="audioRange" class="hint" role="status">音声を選ぶと使用区間を表示します。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
 <section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><p id="validation" class="error" role="status"></p><div class="actions"><button id="fit15" type="button" disabled>15秒に配分</button><button id="fit30" type="button" disabled>30秒に配分</button></div><p class="hint">全画像の時間を均等に近い整数秒へ変更します。余りは先頭から1秒ずつ加えます。</p><div id="timeline"></div><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
 <section><h2>03 確認して、動画にする</h2><canvas id="canvas" width="1280" height="720" aria-label="動画プレビュー"></canvas><p class="hint">生成中は音を鳴らしません。画面を開いたままお待ちください。生成には動画と同程度の時間がかかります。</p><div class="actions"><button id="preview" disabled>▶ 音付きプレビュー</button><button id="generate" class="primary" disabled>MP4を生成する</button></div><button id="cancel" hidden>中止する</button><div id="status" class="status" role="status" aria-live="polite">素材を選んでください。</div><progress id="progress" max="30" value="0" aria-label="処理の進捗"></progress><div id="elapsed">0 秒</div></section>
 <section id="result" hidden><h2>04 再生して保存</h2><video id="video" controls playsinline></video><p id="size"></p><div class="actions"><a id="save" class="button primary">MP4を保存</a><button id="share">共有して保存</button></div><p class="hint">保存後はChromeの「ダウンロード」から開けます。ページを閉じる前に保存してください。</p></section>
-<details><summary>端末の対応状況・困ったとき</summary><p id="capability"></p><p>失敗したら、720p・15秒で試し、他のアプリを閉じてください。画面ロックやアプリ切り替えでは処理を中止します。画像や設定はページを閉じると消えます。</p><p>MP4に非対応の端末では生成できません。無料の代替手順はソース付属のREADMEに記載しています。</p></details>
+<details><summary>端末の対応状況・困ったとき</summary><p id="capability"></p><p>失敗したら、720p・15秒で試し、他のアプリを閉じてください。画面ロックやアプリ切り替えでは処理を中止します。未保存の画像や設定はページを閉じると消えます。閉じる前に「この端末に保存」を押してください。</p><p>MP4に非対応の端末では生成できません。無料の代替手順はソース付属のREADMEに記載しています。</p></details>
 <footer><p class="hint">RIONIX PROJECT · ブラウザー内処理 / 外部通信・解析SDKなし</p></footer></main><script type="module">function duration(clips) { return clips.reduce((sum, c) => sum + Number(c.seconds), 0); }
 function validate(clips) {
   if (clips.length < 1 || clips.length > 10) throw new Error('画像を1〜10枚選んでください。');
@@ -96,7 +96,7 @@ async function loadImages(files, existingCount = 0) {
         if (original.width * original.height > 50_000_000) throw new Error('画像が大きすぎます。5000万画素以下に縮小してください。');
         const scale = Math.min(1, 1920 / Math.max(original.width, original.height));
         const bitmap = await createImageBitmap(original, {resizeWidth:Math.max(1,Math.round(original.width*scale)),resizeHeight:Math.max(1,Math.round(original.height*scale)),resizeQuality:'high'});
-        const clip={id:crypto.randomUUID(),name:file.name,bitmap,seconds:5,motion:'in'};
+        const clip={id:crypto.randomUUID(),name:file.name,file,bitmap,seconds:5,motion:'in'};
         clips.push(clip);
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);
@@ -119,7 +119,7 @@ async function loadAudio(file) {
       element.onloadedmetadata=()=>done(); element.onerror=()=>done(new Error('この音声形式は再生できません。MP3を選んでください。'));
     });
     if (!Number.isFinite(element.duration)||element.duration<=0) throw new Error('音声の長さを取得できません。別のMP3を選んでください。');
-    return {name:file.name,url,element};
+    return {name:file.name,file,url,element};
   } catch(e){element.removeAttribute('src'); element.load();URL.revokeObjectURL(url);throw e;}
 }
 function disposeAudio(audio){if(audio){audio.element.pause();audio.element.removeAttribute('src');audio.element.load();URL.revokeObjectURL(audio.url);}}
@@ -255,14 +255,59 @@ class Renderer {
   }
 }
 
+function checkProject(p) {
+  if(!p || p.version!==1 || !Array.isArray(p.clips) || p.clips.length>10) throw new Error('保存データの形式が違います。この版では読み込めません。');
+  for(const c of p.clips) if(!(c.file instanceof Blob) || !['image/jpeg','image/png'].includes(c.file.type) || c.file.size>15*1024**2 || typeof c.name!=='string' || !Number.isFinite(c.seconds) || !['none','in','out'].includes(c.motion)) throw new Error('保存した画像・設定を読み込めません。');
+  if(p.audio && (!(p.audio.file instanceof Blob) || p.audio.file.size>40*1024**2 || typeof p.audio.name!=='string')) throw new Error('保存した音声を読み込めません。');
+  if(!p.settings || !['720','1080'].includes(p.settings.resolution) || !['0','0.4','0.8'].includes(p.settings.transition) || !Number.isFinite(p.settings.audioStart) || p.settings.audioStart<0) throw new Error('開始位置や出力設定を確認してください。');
+  return p;
+}
+function makeProject(clips,audio,settings) {
+  return checkProject({version:1,savedAt:Date.now(),clips:clips.map(c=>({file:c.file,name:c.name,seconds:c.seconds,motion:c.motion})),audio:audio?{file:audio.file,name:audio.name}:null,settings});
+}
+async function restoreProject(project) {
+  const p=checkProject(project);let clips=[],audio=null;
+  try{
+    if(p.clips.length) clips=await loadImages(p.clips.map(c=>new File([c.file],c.name,{type:c.file.type})));
+    clips.forEach((c,i)=>{c.seconds=p.clips[i].seconds;c.motion=p.clips[i].motion;});
+    if(p.audio) audio=await loadAudio(new File([p.audio.file],p.audio.name,{type:p.audio.file.type}));
+    return {clips,audio,settings:p.settings};
+  }catch(e){disposeImages(clips);disposeAudio(audio);throw e;}
+}
+function projectError(error) {
+  return error?.name==='QuotaExceededError'?'端末の保存容量が足りません。画像を減らすか、端末の空き容量を増やしてください。以前の保存は維持されます。':(error?.message || '端末に保存できません。Chromeの通常モードとサイトデータの設定を確認してください。');
+}
+function projectStore(action, project, dbName='rionix-slideshow-projects') {
+  return new Promise((resolve,reject)=>{
+    if(!globalThis.indexedDB){reject(new Error('このブラウザーでは端末保存を利用できません。Chromeの通常モードで開いてください。'));return;}
+    const open=indexedDB.open(dbName,1);
+    open.onupgradeneeded=()=>open.result.createObjectStore('projects');
+    open.onerror=()=>reject(new Error('端末の保存領域を開けません。Chromeのサイトデータ設定を確認してください。'));
+    open.onblocked=()=>reject(new Error('別のタブを閉じてから、もう一度お試しください。'));
+    open.onsuccess=()=>{
+      const db=open.result;db.onversionchange=()=>db.close();let tx,result;
+      try{
+        tx=db.transaction('projects',action==='save'?'readwrite':'readonly');
+        const store=tx.objectStore('projects');
+        const request=action==='save'?store.put(checkProject(project),'draft'):store.get('draft');
+        request.onsuccess=()=>{result=request.result;};
+        tx.oncomplete=()=>{db.close();resolve(action==='save'?project:result);};
+        tx.onabort=()=>{db.close();reject(tx.error || new Error('保存処理に失敗しました。以前の保存は維持されます。'));};
+        tx.onerror=()=>{};
+      }catch(e){if(tx)tx.abort();db.close();reject(e);}
+    };
+  });
+}
+
 const $=id=>document.getElementById(id), renderer=new Renderer();
 let clips=[],audio=null,busy=false,resultURL=null,resultBlob=null,controller;
+let dirty=false;
 const support=capability();
 $('capability').textContent=support.error||'このブラウザーはMP4録画対応を申告しています。実際の生成で確認します。';
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
-function clearResult(){if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
+function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
+  busy=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -321,7 +366,7 @@ async function run(record){
   try{
     const total=validate(clips);if(!audio)throw new Error('音声を1本選んでください。');
     const audioStart=audioRange($('audioStart').value,audio.element.duration,total).start;
-    controller=new AbortController();setBusy(true);clearResult();
+    controller=new AbortController();setBusy(true);clearResult(false);
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
@@ -333,6 +378,34 @@ async function run(record){
 }
 $('preview').onclick=()=>run(false);$('generate').onclick=()=>run(true);$('cancel').onclick=()=>controller?.abort();
 $('share').onclick=async()=>{if(!resultBlob)return;const file=new File([resultBlob],$('save').download,{type:'video/mp4'});try{if(!navigator.canShare?.({files:[file]}))throw new Error('この端末では共有保存に対応していません。「MP4を保存」を使ってください。');await navigator.share({files:[file],title:'RIONIX 動画'});}catch(e){if(e.name!=='AbortError')status(e.message,true);}};
-window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(busy||dirty){e.preventDefault();e.returnValue='';}});
 setBusy(false);
+
+$('saveProject').onclick=async()=>{
+  if(busy)return;setBusy(true);$('projectStatus').textContent='素材と設定を保存しています…';
+  try{
+    if(!$('audioStart').value.trim())throw new Error('音声の開始位置を入力してから保存してください。');
+    const project=makeProject(clips,audio,{resolution:$('resolution').value,transition:$('transition').value,audioStart:Number($('audioStart').value)});
+    await projectStore('save',project);dirty=false;
+    $('projectStatus').textContent=`保存しました（${new Date(project.savedAt).toLocaleString('ja-JP')}）。ページを閉じても「保存した編集を開く」で再開できます。`;
+  }catch(e){$('projectStatus').textContent=projectError(e);}
+  finally{setBusy(false);}
+};
+$('loadProject').onclick=async()=>{
+  if(busy)return;
+  if(dirty&&!confirm('未保存の変更を破棄して、保存した編集を開きますか？'))return;
+  setBusy(true);$('projectStatus').textContent='保存した素材を読み込んでいます…';
+  try{
+    const project=await projectStore('load');if(!project)throw new Error('保存した編集はありません。素材を選んで「この端末に保存」を押してください。');
+    const next=await restoreProject(project);
+    disposeImages(clips);disposeAudio(audio);clips=next.clips;audio=next.audio;
+    $('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;
+    $('audioName').textContent=audio?`${audio.name} / ${audio.element.duration.toFixed(1)}秒`:'音声はまだ選ばれていません。';
+    clearResult(false);dirty=false;update();
+    $('progress').value=0;$('elapsed').textContent='0 秒';
+    $('projectStatus').textContent=`保存した編集を開きました（${new Date(project.savedAt).toLocaleString('ja-JP')}）。`;
+    status('編集を再開できます。プレビューで確認してください。');
+  }catch(e){$('projectStatus').textContent=projectError(e);}
+  finally{setBusy(false);}
+};
 </script></body></html>
