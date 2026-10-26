@@ -2,8 +2,8 @@
 
 .move{flex-wrap:wrap}.clip img{flex-shrink:0}
 </style></head><body><main>
-<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.3</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
-<fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
+<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.4</span></h1><p>画像と音楽を選んで、15〜30秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
+<fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><label>音声の開始位置（秒）<input id="audioStart" type="number" min="0" step="0.1" inputmode="decimal" value="0" aria-describedby="audioStartHint audioRange"></label><p id="audioStartHint" class="hint">例：1分20秒から使うなら「80」。音付きプレビューとMP4に反映します。音声を入れ替えると0秒に戻ります。</p><p id="audioRange" class="hint" role="status">音声を選ぶと使用区間を表示します。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
 <section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜30秒</p><p id="validation" class="error" role="status"></p><div class="actions"><button id="fit15" type="button" disabled>15秒に配分</button><button id="fit30" type="button" disabled>30秒に配分</button></div><p class="hint">全画像の時間を均等に近い整数秒へ変更します。余りは先頭から1秒ずつ加えます。</p><div id="timeline"></div><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
 <section><h2>03 確認して、動画にする</h2><canvas id="canvas" width="1280" height="720" aria-label="動画プレビュー"></canvas><p class="hint">生成中は音を鳴らしません。画面を開いたままお待ちください。生成には動画と同程度の時間がかかります。</p><div class="actions"><button id="preview" disabled>▶ 音付きプレビュー</button><button id="generate" class="primary" disabled>MP4を生成する</button></div><button id="cancel" hidden>中止する</button><div id="status" class="status" role="status" aria-live="polite">素材を選んでください。</div><progress id="progress" max="30" value="0" aria-label="処理の進捗"></progress><div id="elapsed">0 秒</div></section>
 <section id="result" hidden><h2>04 再生して保存</h2><video id="video" controls playsinline></video><p id="size"></p><div class="actions"><a id="save" class="button primary">MP4を保存</a><button id="share">共有して保存</button></div><p class="hint">保存後はChromeの「ダウンロード」から開けます。ページを閉じる前に保存してください。</p></section>
@@ -124,6 +124,39 @@ async function loadAudio(file) {
 }
 function disposeAudio(audio){if(audio){audio.element.pause();audio.element.removeAttribute('src');audio.element.load();URL.revokeObjectURL(audio.url);}}
 
+function audioRange(value, length, total) {
+  const start = typeof value === 'string' && !value.trim() ? NaN : Number(value);
+  if (!Number.isFinite(start) || start < 0) throw new Error('音声の開始位置を0以上の秒数で入力してください。');
+  if (!Number.isFinite(length) || start >= length) throw new Error('開始位置は音声の長さより前にしてください。');
+  const end = Math.min(length, start + total);
+  return {start, end, silence: Math.max(0, total - (length - start))};
+}
+function seekAudio(element, start, signal, timeoutMs = 10000) {
+  element.pause();
+  return new Promise((resolve,reject) => {
+    let timer;
+    const done = error => {
+      clearTimeout(timer);element.removeEventListener('seeked',ready);element.removeEventListener('error',failed);
+      signal?.removeEventListener('abort',cancel);document.removeEventListener('visibilitychange',hidden);
+      error ? reject(error) : resolve();
+    };
+    const ready = () => {
+      if (Math.abs(element.currentTime - start) > .1) done(new Error('指定位置へ移動できませんでした。別のMP3で試してください。'));
+      else done();
+    };
+    const failed = () => done(new Error('音声の指定位置を読み込めません。別のMP3で試してください。'));
+    const cancel = () => done(new Error('中止しました。設定はそのままです。'));
+    const hidden = () => {if(document.hidden)done(new Error('画面が非表示になったため中止しました。Chromeを前面にしてください。'));};
+    element.addEventListener('seeked',ready);element.addEventListener('error',failed);
+    signal?.addEventListener('abort',cancel,{once:true});document.addEventListener('visibilitychange',hidden);
+    timer=setTimeout(failed,timeoutMs);
+    if(signal?.aborted){cancel();return;}
+    if(document.hidden){hidden();return;}
+    if(!element.seeking && Math.abs(element.currentTime-start)<.001){ready();return;}
+    try{element.currentTime=start;}catch{failed();}
+  });
+}
+
 const MIME_TYPES=['video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1.42E028,mp4a.40.2'];
 function capability(){
   if (!window.isSecureContext) return {error:'HTTPSのURLをChromeで開いてください。'};
@@ -142,7 +175,8 @@ class Renderer {
     await this.context.resume();
     if(this.context.state!=='running') throw new Error('音声処理を開始できません。もう一度ボタンを押してください。');
   }
-  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0}){
+  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0,audioStart=0}){
+    audioStart=audioRange(audioStart,audio.element.duration,total).start;
     const support=capability(); if(record&&support.error)throw new Error(support.error);
     let stream,recorder,dest,osc,gain,wake,timer,deadline,hidden,abort,stateChange,stalled,recDone;
     let stopped=false, failure=null, chunks=[], bytes=0;
@@ -150,7 +184,9 @@ class Renderer {
     try{
       await contextPromise;
       const context=this.context, el=audio.element;
-      this.source.disconnect(); el.currentTime=0; el.volume=1;
+      this.source.disconnect();
+      await seekAudio(el,audioStart,signal);
+      el.volume=1;
       // Keep audio stream alive after a short source ends, padding the remainder with silence.
       if(record){
         dest=context.createMediaStreamDestination(); this.source.connect(dest);
@@ -184,7 +220,7 @@ class Renderer {
       const before=context.currentTime;
       await Promise.race([el.play(),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(new Error('音声を開始できません。別のMP3で試してください。')),10000);})]);
       clearTimeout(deadline);
-      const start=context.currentTime-el.currentTime;
+      const start=context.currentTime-(el.currentTime-audioStart);
       if(start-before>0.25)throw new Error('音声の開始が遅れました。読み込み後にもう一度生成してください。');
       let last=performance.now();
       await new Promise(resolve=>{
@@ -194,7 +230,7 @@ class Renderer {
           if(now-last>350){stop(new Error('端末の描画が追いつきませんでした。720pに変更し、他のアプリを閉じて再試行してください。'));resolve();return;}
           last=now;
           // A media stall cannot silently create a desynchronized "successful" file.
-          if(!el.ended && Math.abs(el.currentTime-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
+          if(!el.ended && Math.abs((el.currentTime-audioStart)-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
           if(t>=total){stop();onProgress(total);resolve();return;}
           drawFrame(canvas,clips,Math.max(0,t),fadeSeconds);onProgress(Math.max(0,t));
           timer=setTimeout(tick,1000/30);
@@ -226,7 +262,7 @@ $('capability').textContent=support.error||'このブラウザーはMP4録画対
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
 function clearResult(){if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;let valid=true;try{validate(clips);}catch{valid=false;}
+  busy=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -259,8 +295,16 @@ function update(){
   });if(!clips.length){const empty=document.createElement('p');empty.textContent='画像を追加してください。';$('clips').append(empty);}summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
 function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
-  let cursor=0;$('timeline').textContent=clips.map((c,i)=>{const start=cursor;cursor+=Number(c.seconds);return `${i+1}枚目 ${start}〜${cursor}秒`;}).join(' → ');
+  let cursor=0;$('timeline').textContent=clips.map((c,i)=>{const start=cursor;cursor+=Number(c.seconds);return `${i+1}枚目 ${start}〜${cursor}秒`;}).join(' → ');audioSummary();
 }
+function audioSummary(){
+  $('audioRange').className='hint';
+  if(!audio){$('audioRange').textContent='音声を選ぶと使用区間を表示します。';return;}
+  try{const r=audioRange($('audioStart').value,audio.element.duration,duration(clips));
+    $('audioRange').textContent=`曲の ${r.start.toFixed(1)}〜${r.end.toFixed(1)}秒を使用`+(r.silence>0?` · 最後の${r.silence.toFixed(1)}秒は無音`:'')+'。映像は1枚目から始まります。';
+  }catch(e){$('audioRange').textContent=e.message;$('audioRange').className='hint error';}
+}
+$('audioStart').oninput=()=>{clearResult();audioSummary();setBusy(busy);};
 $('images').onchange=async e=>{
   const files=[...e.target.files];if(!files.length)return;
   setBusy(true);status('画像を読み込んでいます…');
@@ -269,18 +313,19 @@ $('images').onchange=async e=>{
   finally{e.target.value='';setBusy(false);update();}
 };
 for(const total of [15,30])$('fit'+total).onclick=()=>{distributeTime(clips,total);clearResult();update();status(`合計${total}秒に配分しました。各画像の秒数は個別に変更できます。`);};
-$('audio').onchange=async e=>{setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
+$('audio').onchange=async e=>{if(!e.target.files.length)return;setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioStart').value='0';audioSummary();$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
 $('transition').onchange=()=>{clearResult();};
 async function run(record){
   if(busy)return;
   try{
     const total=validate(clips);if(!audio)throw new Error('音声を1本選んでください。');
+    const audioStart=audioRange($('audioStart').value,audio.element.duration,total).start;
     controller=new AbortController();setBusy(true);clearResult();
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
-    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,fadeSeconds:Number($('transition').value),signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
+    const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,audioStart,fadeSeconds:Number($('transition').value),signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
     if(blob){resultBlob=blob;resultURL=URL.createObjectURL(blob);$('video').src=resultURL;$('save').href=resultURL;$('save').download=`RIONIX_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;$('result').hidden=false;$('size').textContent=`MP4 · ${(blob.size/1024**2).toFixed(1)} MB · ${$('canvas').width}×${$('canvas').height}`;status('MP4を生成しました。再生で映像・音声を確認してから保存してください。');}
     else status('プレビューが終わりました。');
   }catch(err){status(err.message||'処理に失敗しました。720pまたは別の素材で試してください。',true);}

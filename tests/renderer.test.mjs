@@ -12,8 +12,8 @@ function setup({bad=false}={}) {
  context.createOscillator=()=>({connect:()=>({connect(){}}),start(){},stop(){},disconnect(){}});
  context.createGain=()=>({gain:{value:0},disconnect(){}});
  const element=new EventTarget();let started=null;let position=0;
- Object.defineProperty(element,'currentTime',{get:()=>started===null?position:performance.now()/1000-started,set:v=>{position=v;}});
- element.play=async()=>{started=performance.now()/1000;};element.pause=()=>{paused++};element.ended=false;
+ Object.defineProperty(element,'currentTime',{get:()=>started===null?position:position+performance.now()/1000-started,set:v=>{position=v;queueMicrotask(()=>element.dispatchEvent(new Event('seeked')));}});
+ element.play=async()=>{started=performance.now()/1000;};element.pause=()=>{paused++};element.ended=false;element.duration=120;
  const source={connect(){},disconnect(){disconnected++}};
  class Recorder{
   static isTypeSupported(){return true;}
@@ -32,3 +32,11 @@ test('recorder lifecycle cleans tracks and retains output',async()=>{const s=set
 test('invalid output is not presented as MP4',async()=>{const s=setup({bad:true});await assert.rejects(s.renderer.run(s.opts),/確認できません/);assert.ok(s.counts().ended>0);});
 test('cancellation rejects and cleans resources',async()=>{const s=setup();const controller=new AbortController();setTimeout(()=>controller.abort(),40);await assert.rejects(s.renderer.run({...s.opts,total:2,signal:controller.signal}),/中止/);assert.ok(s.counts().ended>0);});
 test('backgrounding rejects instead of succeeding',async()=>{const s=setup();setTimeout(()=>{document.hidden=true;document.dispatchEvent(new Event('visibilitychange'));},40);await assert.rejects(s.renderer.run({...s.opts,total:2}),/非表示/);});
+
+test('nonzero audio start keeps video clock at zero in preview and export',async()=>{
+ for(const record of [false,true]){const s=setup();const progress=[];
+ const result=await s.renderer.run({...s.opts,record,audioStart:80,onProgress:t=>progress.push(t)});
+ assert.ok(progress.length>1);assert.ok(progress[0]<.05);assert.equal(progress.at(-1),s.opts.total);
+ assert.ok(s.opts.audio.element.currentTime>=80);assert.equal(!!result,record);
+ }
+});

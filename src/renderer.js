@@ -1,3 +1,4 @@
+import {audioRange,seekAudio} from './audio-range.js';
 import {drawFrame,releaseDrawBuffers} from './timeline.js';
 export const MIME_TYPES=['video/mp4;codecs=avc1,mp4a.40.2','video/mp4;codecs=avc1.42E028,mp4a.40.2'];
 export function capability(){
@@ -17,7 +18,8 @@ export class Renderer {
     await this.context.resume();
     if(this.context.state!=='running') throw new Error('音声処理を開始できません。もう一度ボタンを押してください。');
   }
-  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0}){
+  async run({canvas,clips,audio,total,record,signal,onProgress,fadeSeconds=0,audioStart=0}){
+    audioStart=audioRange(audioStart,audio.element.duration,total).start;
     const support=capability(); if(record&&support.error)throw new Error(support.error);
     let stream,recorder,dest,osc,gain,wake,timer,deadline,hidden,abort,stateChange,stalled,recDone;
     let stopped=false, failure=null, chunks=[], bytes=0;
@@ -25,7 +27,9 @@ export class Renderer {
     try{
       await contextPromise;
       const context=this.context, el=audio.element;
-      this.source.disconnect(); el.currentTime=0; el.volume=1;
+      this.source.disconnect();
+      await seekAudio(el,audioStart,signal);
+      el.volume=1;
       // Keep audio stream alive after a short source ends, padding the remainder with silence.
       if(record){
         dest=context.createMediaStreamDestination(); this.source.connect(dest);
@@ -59,7 +63,7 @@ export class Renderer {
       const before=context.currentTime;
       await Promise.race([el.play(),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(new Error('音声を開始できません。別のMP3で試してください。')),10000);})]);
       clearTimeout(deadline);
-      const start=context.currentTime-el.currentTime;
+      const start=context.currentTime-(el.currentTime-audioStart);
       if(start-before>0.25)throw new Error('音声の開始が遅れました。読み込み後にもう一度生成してください。');
       let last=performance.now();
       await new Promise(resolve=>{
@@ -69,7 +73,7 @@ export class Renderer {
           if(now-last>350){stop(new Error('端末の描画が追いつきませんでした。720pに変更し、他のアプリを閉じて再試行してください。'));resolve();return;}
           last=now;
           // A media stall cannot silently create a desynchronized "successful" file.
-          if(!el.ended && Math.abs(el.currentTime-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
+          if(!el.ended && Math.abs((el.currentTime-audioStart)-t)>0.25){stop(new Error('音声同期が乱れたため中止しました。もう一度生成してください。'));resolve();return;}
           if(t>=total){stop();onProgress(total);resolve();return;}
           drawFrame(canvas,clips,Math.max(0,t),fadeSeconds);onProgress(Math.max(0,t));
           timer=setTimeout(tick,1000/30);
