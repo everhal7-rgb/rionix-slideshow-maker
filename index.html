@@ -3,14 +3,16 @@
 .move{flex-wrap:wrap}.clip img{flex-shrink:0}
 
 .clip textarea{width:100%;resize:vertical;min-height:100px;line-height:1.5}
+
+#editPlan{width:100%;font:12px monospace;min-height:160px}
 </style></head><body><main>
-<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.7</span></h1><p>画像と音楽を選んで、15〜60秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
+<header><div class="brand">RIONIX / SMALL MOVIE LAB</div><h1>写真から、<br>小さな映像を。 <span class="badge">v0.8</span></h1><p>画像と音楽を選んで、15〜60秒の動画へ。<br>素材はサーバーに送信しません。</p></header>
 <section><h2>編集を保存・再開</h2><div class="actions"><button id="saveProject" type="button" disabled>この端末に保存</button><button id="loadProject" type="button">保存した編集を開く</button></div><p id="projectStatus" role="status">手動保存です。前回の編集は「保存した編集を開く」で再開できます。</p><p class="hint">画像・音声・設定をこのChromeに1件保存します。再度保存すると上書きします。MP4は別途ダウンロードしてください。サイトデータの削除や端末の容量整理で消える場合があります。シークレットモードでは終了時に消えます。</p></section><fieldset id="editor"><section><h2>01 素材を選ぶ</h2><label>画像を追加 · JPEG / PNG<input id="images" type="file" accept="image/jpeg,image/png" multiple></label><p class="hint">1〜10枚 · 1枚15MB以下。追加した画像は末尾に並びます。</p><p id="imageCount">0 / 10枚</p><label>音声1本 · MP3推奨<input id="audio" type="file" accept="audio/*,.mp3"></label><p id="audioName">音声はまだ選ばれていません。</p><label>音声の開始位置（秒）<input id="audioStart" type="number" min="0" step="0.1" inputmode="decimal" value="0" aria-describedby="audioStartHint audioRange"></label><p id="audioStartHint" class="hint">例：1分20秒から使うなら「80」。音付きプレビューとMP4に反映します。音声を入れ替えると0秒に戻ります。</p><p id="audioRange" class="hint" role="status">音声を選ぶと使用区間を表示します。</p><p class="hint">音声は40MB以下。長い音声は動画の最後でカット、短い音声の後は無音になります。</p></section>
 <section><h2>02 順番と時間</h2><div id="clips"><p>画像を選ぶと、ここで並べ替えできます。</p></div><p id="total">合計 0 秒 / 15〜60秒</p><p id="validation" class="error" role="status"></p><div class="actions"><button id="fit15" type="button" disabled>15秒に配分</button><button id="fit30" type="button" disabled>30秒に配分</button><button id="fit60" type="button" disabled>60秒に配分</button></div><p class="hint">全画像の時間を均等に近い整数秒へ変更します。余りは先頭から1秒ずつ加えます。</p><div id="timeline"></div><p class="hint">字幕は画像ごとの表示時間に合わせて切り替わり、プレビューとMP4の両方に入ります。画像がフェードしている間も、字幕は設定時刻で切り替わります。</p><label>画像の切り替え<select id="transition"><option value="0.8">ふわっとフェード · 0.8秒</option><option value="0.4">短いフェード · 0.4秒</option><option value="0">カット · すぐ切り替え</option></select></label><p class="hint">フェードは切り替わる直前に重なります。合計時間は変わりません。画像ごとの「動き」は下のプレビューにも反映されます。</p><label>出力サイズ<select id="resolution"><option value="720">1280×720 · 軽量・おすすめ</option><option value="1080">1920×1080 · 高画質</option></select></label><p class="hint">16:9 / 30fps目標。余白は黒。ズーム時は画像の端が最大約8%分、画面外になります。</p></section></fieldset>
 <section><h2>03 確認して、動画にする</h2><canvas id="canvas" width="1280" height="720" aria-label="動画プレビュー"></canvas><p class="hint">生成中は音を鳴らしません。画面を開いたままお待ちください。生成には動画と同程度の時間がかかります。60秒はまず720pでお試しください。高画質で停止する場合は720pか短い時間に変更してください。</p><div class="actions"><button id="preview" disabled>▶ 音付きプレビュー</button><button id="generate" class="primary" disabled>MP4を生成する</button></div><button id="cancel" hidden>中止する</button><div id="status" class="status" role="status" aria-live="polite">素材を選んでください。</div><progress id="progress" max="60" value="0" aria-label="処理の進捗"></progress><div id="elapsed">0 秒</div></section>
 <section id="result" hidden><h2>04 再生して保存</h2><video id="video" controls playsinline></video><p id="size"></p><div class="actions"><a id="save" class="button primary">MP4を保存</a><button id="share">共有して保存</button></div><p class="hint">保存後はChromeの「ダウンロード」から開けます。ページを閉じる前に保存してください。</p></section>
 <details><summary>端末の対応状況・困ったとき</summary><p id="capability"></p><p>失敗したら、720p・15秒で試し、他のアプリを閉じてください。画面ロックやアプリ切り替えでは処理を中止します。未保存の画像や設定はページを閉じると消えます。閉じる前に「この端末に保存」を押してください。</p><p>MP4に非対応の端末では生成できません。無料の代替手順はソース付属のREADMEに記載しています。</p></details>
-<footer><p class="hint">RIONIX PROJECT · ブラウザー内処理 / 外部通信・解析SDKなし</p></footer></main><script type="module">// Captions are screen-fixed overlays, independent of image motion and fades.
+<details><summary>AIと編集設定を受け渡す（実験）</summary><p>素材を読み込み、合計15〜60秒にして「設定を取得」。JSONと同じ素材をChatGPTに渡すと編集案を作れます。素材名・サイズが一致する場合だけ反映できます。素材は自動送信しません。</p><button id="getPlan" type="button">設定を取得</button><label>編集設定JSON<textarea id="editPlan" rows="10" maxlength="20000" spellcheck="false"></textarea></label><button id="applyPlan" type="button">設定を確認して反映</button><p id="planStatus" role="status"></p><p class="hint">設定の反映には確認画面が出ます。動画生成・保存は別操作です。スマホとChatGPTの編集状態は自動同期されません。</p></details><footer><p class="hint">RIONIX PROJECT · ブラウザー内処理 / 外部通信・解析SDKなし</p></footer></main><script type="module">// Captions are screen-fixed overlays, independent of image motion and fades.
 function validCaption(text) {
   return text === undefined || (typeof text === 'string' && text.length <= 80 && text.split('\n').length <= 3);
 }
@@ -330,6 +332,28 @@ function projectStore(action, project, dbName='rionix-slideshow-projects') {
   });
 }
 
+const ref=f=>({name:f.name,size:f.size});
+function checkPlan(p){
+ if(!p||p.format!=='rionix-edit-plan'||p.version!==1||!Array.isArray(p.clips))throw new Error('RIONIX編集設定 version 1 を指定してください。');
+ const asset=a=>a&&typeof a.name==='string'&&a.name.length>0&&a.name.length<=255&&!/[\\/\x00-\x1f]/.test(a.name)&&Number.isSafeInteger(a.size)&&a.size>0;
+ if(p.clips.some(c=>!asset(c.asset)||!['none','in','out'].includes(c.motion))||!asset(p.audio))throw new Error('素材名・サイズ・動きの設定が不正です。');
+ validate(p.clips);
+ if(new Set(p.clips.map(c=>c.asset.name)).size!==p.clips.length)throw new Error('同名画像は区別できません。素材名を変更してください。');
+ if(!p.settings||!['720','1080'].includes(p.settings.resolution)||!['0','0.4','0.8'].includes(p.settings.transition)||!Number.isFinite(p.settings.audioStart)||p.settings.audioStart<0)throw new Error('出力設定が不正です。');
+ return {format:p.format,version:1,clips:p.clips.map(c=>({asset:{name:c.asset.name,size:c.asset.size},seconds:Number(c.seconds),motion:c.motion,caption:c.caption||''})),audio:{name:p.audio.name,size:p.audio.size},settings:{resolution:p.settings.resolution,transition:p.settings.transition,audioStart:p.settings.audioStart}};
+}
+function exportPlan(clips,audio,settings){if(!audio)throw new Error('音声を読み込んでください。');return checkPlan({format:'rionix-edit-plan',version:1,clips:clips.map(c=>({asset:ref(c.file),seconds:c.seconds,motion:c.motion,caption:c.caption||''})),audio:ref(audio.file),settings});}
+function preparePlan(text,clips,audio){
+ if(text.length>20000)throw new Error('編集設定は20,000文字以下にしてください。');
+ let p;try{p=checkPlan(JSON.parse(text));}catch(e){throw new Error('設定を読み込めません：'+e.message);}
+ const same=(a,f)=>f&&a.name===f.name&&a.size===f.size;
+ if(!same(p.audio,audio?.file))throw new Error('音声の名前・サイズが一致しません。同じ素材を読み込んでください。');
+ if(p.clips.length!==clips.length)throw new Error('読み込んだ画像枚数と設定の枚数が一致しません。');
+ const next=p.clips.map(c=>{const matches=clips.filter(x=>same(c.asset,x.file));if(matches.length!==1)throw new Error('画像が一致しないか重複しています：'+c.asset.name);return {...matches[0],seconds:c.seconds,motion:c.motion,caption:c.caption};});
+ if(p.settings.audioStart>=audio.element.duration)throw new Error('音声の開始位置が曲の長さを超えています。');
+ return {clips:next,settings:p.settings};
+}
+
 const $=id=>document.getElementById(id), renderer=new Renderer();
 let clips=[],audio=null,busy=false,resultURL=null,resultBlob=null,controller;
 let dirty=false;
@@ -338,7 +362,7 @@ $('capability').textContent=support.error||'このブラウザーはMP4録画対
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
 function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
+  busy=value;$('getPlan').disabled=value;$('applyPlan').disabled=value;$('editPlan').disabled=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;$('fit60').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -443,4 +467,12 @@ $('loadProject').onclick=async()=>{
   }catch(e){$('projectStatus').textContent=projectError(e);}
   finally{setBusy(false);}
 };
+
+$('getPlan').onclick=()=>{try{$('editPlan').value=JSON.stringify(exportPlan(clips,audio,{resolution:$('resolution').value,transition:$('transition').value,audioStart:Number($('audioStart').value)}),null,2);$('planStatus').textContent='設定を取得しました。素材本体は含まれません。';}catch(e){$('planStatus').textContent=e.message;}};
+$('applyPlan').onclick=()=>{if(busy)return;try{
+ const next=preparePlan($('editPlan').value,clips,audio);
+ const summary=next.clips.map((c,i)=>`${i+1}. ${c.name}: ${c.seconds}秒 / ${c.motion} / 字幕 ${c.caption||'なし'}`).join('\n');
+ if(!confirm(`この設定を反映しますか？現在の未保存設定を置き換えます。\n${summary}\n音声開始 ${next.settings.audioStart}秒 / ${next.settings.resolution}p / フェード${next.settings.transition}秒`))return;
+ clips=next.clips;$('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;clearResult();update();$('planStatus').textContent='設定を反映しました。プレビューで確認してください。端末保存は手動です。';
+ }catch(e){$('planStatus').textContent=e.message;}};
 </script></body></html>

@@ -3,3 +3,5 @@
 .move{flex-wrap:wrap}.clip img{flex-shrink:0}
 
 .clip textarea{width:100%;resize:vertical;min-height:100px;line-height:1.5}
+
+#editPlan{width:100%;font:12px monospace;min-height:160px}

@@ -1,3 +1,4 @@
+import {exportPlan,preparePlan} from './edit-plan.js';
 import {makeProject,restoreProject,projectStore,projectError} from './project.js';
 import {audioRange} from './audio-range.js';
 import {duration,validate,draw,distributeTime} from './timeline.js';
@@ -11,7 +12,7 @@ $('capability').textContent=support.error||'このブラウザーはMP4録画対
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
 function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
+  busy=value;$('getPlan').disabled=value;$('applyPlan').disabled=value;$('editPlan').disabled=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;$('fit60').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -116,3 +117,11 @@ $('loadProject').onclick=async()=>{
   }catch(e){$('projectStatus').textContent=projectError(e);}
   finally{setBusy(false);}
 };
+
+$('getPlan').onclick=()=>{try{$('editPlan').value=JSON.stringify(exportPlan(clips,audio,{resolution:$('resolution').value,transition:$('transition').value,audioStart:Number($('audioStart').value)}),null,2);$('planStatus').textContent='設定を取得しました。素材本体は含まれません。';}catch(e){$('planStatus').textContent=e.message;}};
+$('applyPlan').onclick=()=>{if(busy)return;try{
+ const next=preparePlan($('editPlan').value,clips,audio);
+ const summary=next.clips.map((c,i)=>`${i+1}. ${c.name}: ${c.seconds}秒 / ${c.motion} / 字幕 ${c.caption||'なし'}`).join('\n');
+ if(!confirm(`この設定を反映しますか？現在の未保存設定を置き換えます。\n${summary}\n音声開始 ${next.settings.audioStart}秒 / ${next.settings.resolution}p / フェード${next.settings.transition}秒`))return;
+ clips=next.clips;$('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;clearResult();update();$('planStatus').textContent='設定を反映しました。プレビューで確認してください。端末保存は手動です。';
+ }catch(e){$('planStatus').textContent=e.message;}};
