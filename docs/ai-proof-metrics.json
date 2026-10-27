@@ -1,0 +1,58 @@
+{
+  "before": {
+    "streams": [
+      {
+        "codec": "h264",
+        "duration": "15.000000",
+        "frames": "450",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec": "aac",
+        "duration": "15.000000",
+        "frames": "705",
+        "width": null,
+        "height": null
+      }
+    ],
+    "decoded_video_frames": 450,
+    "first_gold_frame_seconds": 10.0,
+    "audio_frequency_6_5s": 440.0,
+    "audio_frequency_7_0s": 880.0,
+    "last_scene_one_second_pixel_changes": [
+      0.09438078703703703,
+      0.0023263888888888887,
+      0.0023668981481481484,
+      0.0023668981481481484
+    ]
+  },
+  "after": {
+    "streams": [
+      {
+        "codec": "h264",
+        "duration": "15.000000",
+        "frames": "450",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec": "aac",
+        "duration": "15.000000",
+        "frames": "705",
+        "width": null,
+        "height": null
+      }
+    ],
+    "decoded_video_frames": 450,
+    "first_gold_frame_seconds": 7.0,
+    "audio_frequency_6_5s": 440.0,
+    "audio_frequency_7_0s": 880.0,
+    "last_scene_one_second_pixel_changes": [
+      7.256076388888889,
+      7.4812210648148145,
+      7.75515625,
+      7.465462962962963
+    ]
+  }
+}
