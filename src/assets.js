@@ -11,7 +11,7 @@ export async function loadImages(files, existingCount = 0) {
         if (original.width * original.height > 50_000_000) throw new Error('画像が大きすぎます。5000万画素以下に縮小してください。');
         const scale = Math.min(1, 1920 / Math.max(original.width, original.height));
         const bitmap = await createImageBitmap(original, {resizeWidth:Math.max(1,Math.round(original.width*scale)),resizeHeight:Math.max(1,Math.round(original.height*scale)),resizeQuality:'high'});
-        const clip={id:crypto.randomUUID(),name:file.name,file,bitmap,seconds:5,motion:'in'};
+        const clip={id:crypto.randomUUID(),name:file.name,file,bitmap,seconds:5,motion:'in',caption:''};
         clips.push(clip);
         const thumb = document.createElement('canvas'); thumb.width=240; thumb.height=135;
         const ctx=thumb.getContext('2d'); const s=Math.min(240/bitmap.width,135/bitmap.height);

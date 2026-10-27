@@ -1,19 +1,20 @@
+import {validCaption} from './captions.js';
 import {loadImages,loadAudio,disposeImages,disposeAudio} from './assets.js';
 export function checkProject(p) {
   if(!p || p.version!==1 || !Array.isArray(p.clips) || p.clips.length>10) throw new Error('保存データの形式が違います。この版では読み込めません。');
-  for(const c of p.clips) if(!(c.file instanceof Blob) || !['image/jpeg','image/png'].includes(c.file.type) || c.file.size>15*1024**2 || typeof c.name!=='string' || !Number.isFinite(c.seconds) || !['none','in','out'].includes(c.motion)) throw new Error('保存した画像・設定を読み込めません。');
+  for(const c of p.clips) if(!(c.file instanceof Blob) || !['image/jpeg','image/png'].includes(c.file.type) || c.file.size>15*1024**2 || typeof c.name!=='string' || !Number.isFinite(c.seconds) || (!['none','in','out'].includes(c.motion) || !validCaption(c.caption))) throw new Error('保存した画像・設定を読み込めません。');
   if(p.audio && (!(p.audio.file instanceof Blob) || p.audio.file.size>40*1024**2 || typeof p.audio.name!=='string')) throw new Error('保存した音声を読み込めません。');
   if(!p.settings || !['720','1080'].includes(p.settings.resolution) || !['0','0.4','0.8'].includes(p.settings.transition) || !Number.isFinite(p.settings.audioStart) || p.settings.audioStart<0) throw new Error('開始位置や出力設定を確認してください。');
   return p;
 }
 export function makeProject(clips,audio,settings) {
-  return checkProject({version:1,savedAt:Date.now(),clips:clips.map(c=>({file:c.file,name:c.name,seconds:c.seconds,motion:c.motion})),audio:audio?{file:audio.file,name:audio.name}:null,settings});
+  return checkProject({version:1,savedAt:Date.now(),clips:clips.map(c=>({file:c.file,name:c.name,seconds:c.seconds,motion:c.motion,caption:c.caption||''})),audio:audio?{file:audio.file,name:audio.name}:null,settings});
 }
 export async function restoreProject(project) {
   const p=checkProject(project);let clips=[],audio=null;
   try{
     if(p.clips.length) clips=await loadImages(p.clips.map(c=>new File([c.file],c.name,{type:c.file.type})));
-    clips.forEach((c,i)=>{c.seconds=p.clips[i].seconds;c.motion=p.clips[i].motion;});
+    clips.forEach((c,i)=>{c.seconds=p.clips[i].seconds;c.motion=p.clips[i].motion;c.caption=p.clips[i].caption||'';});
     if(p.audio) audio=await loadAudio(new File([p.audio.file],p.audio.name,{type:p.audio.file.type}));
     return {clips,audio,settings:p.settings};
   }catch(e){disposeImages(clips);disposeAudio(audio);throw e;}

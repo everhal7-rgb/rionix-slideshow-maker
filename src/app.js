@@ -40,7 +40,11 @@ function update(){
     const motion=document.createElement('select');motion.setAttribute('aria-label',`画像${index+1}の動き`);
     for(const [value,text] of [['none','動かさない'],['in','ゆっくり寄る'],['out','ゆっくり引く']]){const option=document.createElement('option');option.value=value;option.textContent=text;motion.append(option);}
     motion.value=clip.motion||'none';motion.onchange=()=>{clip.motion=motion.value;clearResult();draw($('canvas'),clips[0]);};motionLabel.append(motion);
-    body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
+    const captionLabel=document.createElement('label');captionLabel.textContent='字幕・歌詞（任意）';
+    const caption=document.createElement('textarea');caption.rows=3;caption.maxLength=80;caption.value=clip.caption||'';caption.placeholder='この画像に添える言葉';caption.setAttribute('aria-label',`画像${index+1}の字幕`);
+    caption.oninput=()=>{clip.caption=caption.value;clearResult();summary();setBusy(busy);draw($('canvas'),clip);};captionLabel.append(caption);
+    const captionHint=document.createElement('p');captionHint.className='hint';captionHint.textContent='80文字以内・改行は2回まで。下部に白文字＋黒縁で表示。長い文章は自動で折り返し・縮小します。';
+    body.append(title,label,motionLabel,captionLabel,captionHint,buttons);row.append(img,body);$('clips').append(row);
   });if(!clips.length){const empty=document.createElement('p');empty.textContent='画像を追加してください。';$('clips').append(empty);}summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
 function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜60秒`;

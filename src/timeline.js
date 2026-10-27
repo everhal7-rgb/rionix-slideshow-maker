@@ -1,7 +1,9 @@
+import {drawCaption,validCaption} from './captions.js';
 export function duration(clips) { return clips.reduce((sum, c) => sum + Number(c.seconds), 0); }
 export function validate(clips) {
   if (clips.length < 1 || clips.length > 10) throw new Error('画像を1〜10枚選んでください。');
   if (clips.some(c => !Number.isInteger(Number(c.seconds)) || c.seconds < 1 || c.seconds > 60)) throw new Error('各画像の時間は1〜60秒の整数にしてください。');
+  if(clips.some(c=>!validCaption(c.caption)))throw new Error('字幕は80文字以内・改行は2回までにしてください。');
   const total = duration(clips);
   if (total < 15 || total > 60) throw new Error('合計時間を15〜60秒にしてください。');
   return total;
@@ -51,16 +53,18 @@ function paint(canvas, clip, progress = 0) {
   ctx.restore();
 }
 const fadeLayers = new WeakMap();
-export function draw(canvas, clip) { paint(canvas, clip); }
+export function draw(canvas, clip) { paint(canvas, clip); drawCaption(canvas,clip?.caption); }
 export function drawFrame(canvas, clips, seconds, fadeSeconds = 0) {
   const layers = sceneAt(clips, seconds, fadeSeconds);
   paint(canvas, layers[0]?.clip, layers[0]?.progress);
-  if (layers.length < 2 || layers[1].opacity <= 0) return;
+  if (layers.length >= 2 && layers[1].opacity > 0) {
   let layer = fadeLayers.get(canvas);
   if (!layer) { layer = document.createElement('canvas'); fadeLayers.set(canvas,layer); }
   if (layer.width !== canvas.width || layer.height !== canvas.height) {layer.width = canvas.width;layer.height = canvas.height;}
   paint(layer,layers[1].clip,layers[1].progress);
   const ctx = canvas.getContext('2d');ctx.save();ctx.globalAlpha=layers[1].opacity;ctx.drawImage(layer,0,0);ctx.restore();
+  }
+  drawCaption(canvas,clipAt(clips,seconds)?.caption);
 }
 export function releaseDrawBuffers(canvas) {
   const layer=fadeLayers.get(canvas);
