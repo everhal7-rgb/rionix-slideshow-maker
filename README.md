@@ -1,6 +1,6 @@
-# RIONIX 紙芝居動画メーカー v0.5
+# RIONIX 紙芝居動画メーカー v0.6
 
-画像1〜10枚＋音声1本から、15〜30秒・16:9のMP4を端末内で録画する実験版。
+画像1〜10枚＋音声1本から、15〜60秒・16:9のMP4を端末内で録画する実験版。
 **v0.1はユーザーのAndroid実機で15秒の生成・保存後再生、30秒の高画質出力の成功報告あり。v0.2の寄り・引きもユーザーの実機動作確認あり。演出入りMP4の保存再生は個別の確認待ちです。**
 
 公開URL: https://everhal7-rgb.github.io/rionix-slideshow-maker/
@@ -142,3 +142,9 @@ python3 tools/render.py --images 1.jpg 2.png 3.jpg --seconds 5 5 5 --audio music
 - ffmpeg.wasm性能: https://ffmpegwasm.netlify.app/docs/performance/
 - ffmpeg.wasm FAQ: https://ffmpegwasm.netlify.app/docs/faq/
 - GitHub Pages: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
+
+## v0.6 最大60秒
+
+合計15〜60秒、各画像1〜60秒。「60秒に配分」を追加。1〜10枚の枚数制限は維持します。v0.5の保存形式・保存領域は変更せず以前の編集を開けます。
+60秒はまず720pで確認してください。生成には約60秒かかり、Chromeを前面に保つ必要があります。1080pの目標ビットレートは8Mbps、60秒の概算は音声込み約61MB（実際は端末依存）。80MiBの出力上限、描画遅延・音声同期監視・中止時の解放は維持しています。
+ユーザーからv0.5の保存・再開、寄り引き、音声開始位置の成功報告あり。v0.6のAndroidでの60秒生成・保存再生は確認待ちです。

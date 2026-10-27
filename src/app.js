@@ -13,7 +13,7 @@ function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').tex
 function setBusy(value){
   busy=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
-  $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;
+  $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;$('fit60').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
   $('generate').disabled=value||!valid||!audio||!!support.error;
   $('cancel').hidden=!value||!controller;
@@ -26,7 +26,7 @@ function update(){
     const body=document.createElement('div');body.className='clipbody';
     const title=document.createElement('strong');title.textContent=`${index+1}. ${clip.name}`;
     const label=document.createElement('label');label.textContent='表示時間（秒）';
-    const input=document.createElement('input');input.type='number';input.min=1;input.max=30;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
+    const input=document.createElement('input');input.type='number';input.min=1;input.max=60;input.step=1;input.inputMode='numeric';input.value=clip.seconds;input.setAttribute('aria-label',`画像${index+1}の秒数`);
     input.oninput=()=>{clip.seconds=Number(input.value);clearResult();summary();setBusy(busy);};label.append(input);
     const buttons=document.createElement('div');buttons.className='move';
     for(const [delta,text] of [[-1,'↑ 前へ'],[1,'↓ 後へ']]){
@@ -43,7 +43,7 @@ function update(){
     body.append(title,label,motionLabel,buttons);row.append(img,body);$('clips').append(row);
   });if(!clips.length){const empty=document.createElement('p');empty.textContent='画像を追加してください。';$('clips').append(empty);}summary();draw($('canvas'),clips[0]);setBusy(busy);
 }
-function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜30秒`;
+function summary(){$('imageCount').textContent=`${clips.length} / 10枚`;let issue='';try{validate(clips);}catch(e){issue=e.message;}$('validation').textContent=issue;const total=duration(clips);$('total').textContent=`合計 ${total} 秒 / 15〜60秒`;
   let cursor=0;$('timeline').textContent=clips.map((c,i)=>{const start=cursor;cursor+=Number(c.seconds);return `${i+1}枚目 ${start}〜${cursor}秒`;}).join(' → ');audioSummary();
 }
 function audioSummary(){
@@ -57,11 +57,11 @@ $('audioStart').oninput=()=>{clearResult();audioSummary();setBusy(busy);};
 $('images').onchange=async e=>{
   const files=[...e.target.files];if(!files.length)return;
   setBusy(true);status('画像を読み込んでいます…');
-  try{const next=await loadImages(files,clips.length);clips.push(...next);clearResult();status('画像を追加しました。合計が範囲外なら「15秒に配分」「30秒に配分」で調整できます。');}
+  try{const next=await loadImages(files,clips.length);clips.push(...next);clearResult();status('画像を追加しました。合計が範囲外なら「15秒に配分」「30秒に配分」「60秒に配分」で調整できます。');}
   catch(err){status(err.message,true);}
   finally{e.target.value='';setBusy(false);update();}
 };
-for(const total of [15,30])$('fit'+total).onclick=()=>{distributeTime(clips,total);clearResult();update();status(`合計${total}秒に配分しました。各画像の秒数は個別に変更できます。`);};
+for(const total of [15,30,60])$('fit'+total).onclick=()=>{distributeTime(clips,total);clearResult();update();status(`合計${total}秒に配分しました。各画像の秒数は個別に変更できます。`);};
 $('audio').onchange=async e=>{if(!e.target.files.length)return;setBusy(true);status('音声を読み込んでいます…');try{const next=await loadAudio(e.target.files[0]);disposeAudio(audio);audio=next;$('audioStart').value='0';audioSummary();$('audioName').textContent=`${audio.name} / ${audio.element.duration.toFixed(1)}秒`;clearResult();status('音声を読み込みました。');}catch(err){status(err.message,true);}finally{e.target.value='';setBusy(false);}};
 $('resolution').onchange=()=>{clearResult();};
 $('transition').onchange=()=>{clearResult();};
