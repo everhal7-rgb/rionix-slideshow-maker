@@ -1,3 +1,4 @@
+import {makeWorkBundle,planText,requirePreview} from './work-export.js';
 import {exportPlan,preparePlan} from './edit-plan.js';
 import {makeProject,restoreProject,projectStore,projectError} from './project.js';
 import {audioRange} from './audio-range.js';
@@ -6,13 +7,15 @@ import {loadImages,loadAudio,disposeImages,disposeAudio} from './assets.js';
 import {Renderer,capability} from './renderer.js';
 const $=id=>document.getElementById(id), renderer=new Renderer();
 let clips=[],audio=null,busy=false,resultURL=null,resultBlob=null,controller;
-let dirty=false;
+let dirty=false,previewedPlan=null,workURL=null;
+function currentPlan(){return exportPlan(clips,audio,{resolution:$('resolution').value,transition:$('transition').value,audioStart:Number($('audioStart').value)});}
+function invalidateWork(){previewedPlan=null;if(workURL)URL.revokeObjectURL(workURL);workURL=null;$('workDownload').hidden=true;$('workExport').disabled=true;$('workStatus').textContent='編集後は音付きプレビューを最後まで確認してください。';}
 const support=capability();
 $('capability').textContent=support.error||'このブラウザーはMP4録画対応を申告しています。実際の生成で確認します。';
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'status error':'status';}
-function clearResult(changed=true){if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
+function clearResult(changed=true){if(changed)invalidateWork();if(changed){dirty=true;$('projectStatus').textContent='未保存の変更があります。「この端末に保存」を押してください。';}if(resultURL)URL.revokeObjectURL(resultURL);resultURL=null;resultBlob=null;$('result').hidden=true;$('video').removeAttribute('src');$('video').load();}
 function setBusy(value){
-  busy=value;$('getPlan').disabled=value;$('applyPlan').disabled=value;$('editPlan').disabled=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
+  busy=value;$('workExport').disabled=value||!previewedPlan;$('workDownload').hidden=value||!workURL;$('getPlan').disabled=value;$('applyPlan').disabled=value;$('editPlan').disabled=value;$('saveProject').disabled=value||(!clips.length&&!audio);$('loadProject').disabled=value;let valid=true;try{validate(clips);if(audio)audioRange($('audioStart').value,audio.element.duration,duration(clips));}catch{valid=false;}
   $('editor').disabled=value;$('images').disabled=value||clips.length>=10;
   $('fit15').disabled=value||!clips.length;$('fit30').disabled=value||!clips.length;$('fit60').disabled=value||!clips.length;
   $('preview').disabled=value||!valid||!audio;
@@ -75,13 +78,13 @@ async function run(record){
   try{
     const total=validate(clips);if(!audio)throw new Error('音声を1本選んでください。');
     const audioStart=audioRange($('audioStart').value,audio.element.duration,total).start;
-    controller=new AbortController();setBusy(true);clearResult(false);
+    invalidateWork();controller=new AbortController();setBusy(true);clearResult(false);
     $('canvas').width=record&&$('resolution').value==='1080'?1920:1280;$('canvas').height=$('canvas').width*9/16;
     $('progress').value=0;$('progress').max=total;
     status(record?'MP4を生成しています。画面を開いたままお待ちください。':'音声付きプレビュー中…');
     const blob=await renderer.run({canvas:$('canvas'),clips,audio,total,record,audioStart,fadeSeconds:Number($('transition').value),signal:controller.signal,onProgress:t=>{$('progress').value=t;$('elapsed').textContent=`${t.toFixed(1)} / ${total} 秒`;}});
     if(blob){resultBlob=blob;resultURL=URL.createObjectURL(blob);$('video').src=resultURL;$('save').href=resultURL;$('save').download=`RIONIX_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;$('result').hidden=false;$('size').textContent=`MP4 · ${(blob.size/1024**2).toFixed(1)} MB · ${$('canvas').width}×${$('canvas').height}`;status('MP4を生成しました。再生で映像・音声を確認してから保存してください。');}
-    else status('プレビューが終わりました。');
+    else {status('プレビューが終わりました。');try{previewedPlan=planText(currentPlan());$('workStatus').textContent='プレビュー完了。この編集をWork用データとして保存できます。修正した場合は再プレビューしてください。';}catch(e){$('workStatus').textContent='Work用データを作れません：'+e.message;}}
   }catch(err){status(err.message||'処理に失敗しました。720pまたは別の素材で試してください。',true);}
   finally{setBusy(false);controller=null;}
 }
@@ -110,7 +113,7 @@ $('loadProject').onclick=async()=>{
     disposeImages(clips);disposeAudio(audio);clips=next.clips;audio=next.audio;
     $('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;
     $('audioName').textContent=audio?`${audio.name} / ${audio.element.duration.toFixed(1)}秒`:'音声はまだ選ばれていません。';
-    clearResult(false);dirty=false;update();
+    invalidateWork();clearResult(false);dirty=false;update();
     $('progress').value=0;$('elapsed').textContent='0 秒';
     $('projectStatus').textContent=`保存した編集を開きました（${new Date(project.savedAt).toLocaleString('ja-JP')}）。`;
     status('編集を再開できます。プレビューで確認してください。');
@@ -125,3 +128,16 @@ $('applyPlan').onclick=()=>{if(busy)return;try{
  if(!confirm(`この設定を反映しますか？現在の未保存設定を置き換えます。\n${summary}\n音声開始 ${next.settings.audioStart}秒 / ${next.settings.resolution}p / フェード${next.settings.transition}秒`))return;
  clips=next.clips;$('resolution').value=next.settings.resolution;$('transition').value=next.settings.transition;$('audioStart').value=next.settings.audioStart;clearResult();update();$('planStatus').textContent='設定を反映しました。プレビューで確認してください。端末保存は手動です。';
  }catch(e){$('planStatus').textContent=e.message;}};
+
+$('workExport').onclick=async()=>{
+ if(busy)return;
+ try{
+  const plan=currentPlan();requirePreview(plan,previewedPlan);setBusy(true);
+  $('workStatus').textContent='確認した編集と素材をまとめています…';
+  const bundle=await makeWorkBundle(plan,[...clips.map(c=>c.file),audio.file],previewedPlan);
+  if(workURL)URL.revokeObjectURL(workURL);
+  workURL=URL.createObjectURL(new Blob([JSON.stringify(bundle)],{type:'application/json'}));
+  $('workDownload').href=workURL;$('workDownload').download=`RIONIX_${bundle.snapshotSha256.slice(0,12)}.rionix.json`;
+  $('workStatus').textContent=`書き出しデータを用意しました。「Work用データを保存」で保存してWorkへ渡してください。編集ID: ${bundle.snapshotSha256.slice(0,12)}`;
+ }catch(e){$('workStatus').textContent=e.message;}finally{setBusy(false);}
+};

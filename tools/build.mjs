@@ -1,6 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
-const sources=await Promise.all(['captions','timeline','assets','audio-range','renderer','project','edit-plan','app'].map(n=>read(`src/${n}.js`)));
+const sources=await Promise.all(['captions','timeline','assets','audio-range','renderer','project','edit-plan','work-export','app'].map(n=>read(`src/${n}.js`)));
 const js=sources.map(s=>s.replace(/^import .*;\n/gm,'').replace(/^export /gm,'')).join('\n');
 const template=await read('tools/template.html');
 await writeFile(new URL('../index.html',import.meta.url),template.replace('/*STYLE*/',()=>'' ).replace('<style></style>',`<style>${await read('src/style.css')}</style>`).replace('/*APP*/',()=>js));

@@ -1,3 +1,23 @@
+# v0.9 — プレビューからWorkの完成MP4へ
+
+Android向けMediaRecorderは変更せず維持。録画非対応のWorkブラウザーでは、公開アプリの「音付きプレビュー」完了後に「Work用の書き出しデータを作る」→「Work用データを保存」を操作する。
+`.rionix.json`は、その時点の編集JSON、元画像・音声、各素材のSHA256、編集と素材を結ぶsnapshotSha256を含む。素材合計80MiBまで。外部への自動送信なし。編集・素材変更、復元、中断プレビュー後は再プレビューが必要。
+
+Workはダウンロードしたファイルをそのまま使用する。編集JSONを再構成しない。ユーザーへのプレビュー提示→修正→OKの会話を経て、同じ編集IDで完成出力する。previewCompletedはアプリでの再生完了を示し、ユーザーの承認を示すものではない。
+
+```
+npm install
+node tools/render-work.mjs downloaded.rionix.json new-output.mp4 FULL_SNAPSHOT_SHA256
+```
+
+Node.js 22以上、FFmpeg/FFprobe、optional dependency @napi-rs/canvasが必要。CLIはハッシュ不一致・別の編集ID・不正素材・既存出力への上書きを拒否し、検証済み素材を一時展開して既存の共通drawFrameレンダラーへ渡す。受け取った素材はGitHubへ置かない。MP4と`.receipt.json`（入力ID、素材ハッシュ、編集JSON、出力ハッシュ、使用ソースのハッシュ）が生成される。
+
+30fps、H.264/yuv420p＋AAC、720p/1080p、指定audioStartから同じ長さを出力。シーン時刻・フェード・動き・字幕は共通描画処理。ブラウザーとnative Canvasの画像補間やフォントには差があり、ピクセル単位の一致を保証しない。特に日本語字幕は実出力を確認する。今回は字幕なし15秒で実証する。
+
+既存Android出力のボタン・MediaRecorder・保存形式は維持。Work出力はアプリがMP4を直接ダウンロードさせる機能ではなく、アプリが出した固定スナップショットをWorkが変換してチャットで渡す経路。常時バックエンドや自動同期は作らない。
+
+---
+
 # RIONIX 紙芝居動画メーカー v0.8
 
 画像1〜10枚＋音声1本から、15〜60秒・16:9のMP4を端末内で録画する実験版。
